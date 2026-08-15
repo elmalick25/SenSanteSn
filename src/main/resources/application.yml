@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: SenSante
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sensante_db
+    username: postgres
+    password: "Flick2004@"
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8082
