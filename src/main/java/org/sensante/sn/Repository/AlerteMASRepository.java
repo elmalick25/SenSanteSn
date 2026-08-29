@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface AlerteMASRepository extends JpaRepository<AlerteMAS, Long> {
 
-    // Recherche optionnelle : récupérer toutes les alertes non acquittées
     List<AlerteMAS> findByAcquitteeFalse();
 }

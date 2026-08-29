@@ -18,7 +18,7 @@ public class AlerteMASService {
 
     public AlerteMAS createAlerte(AlerteMAS alerte) {
         if (alerte.getAcquittee() == null) {
-            alerte.setAcquittee(false); // Valeur par défaut si non renseignée
+            alerte.setAcquittee(false);
         }
         return alerteRepository.save(alerte);
     }

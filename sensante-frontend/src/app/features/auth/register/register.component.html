@@ -1,0 +1,294 @@
+<div class="auth-container">
+  <div class="auth-box glass-card register-box">
+
+    <div class="auth-header">
+      <div class="brand-logo-container">
+        <svg class="brand-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="60" height="60" rx="16" fill="url(#regLogoGrad)"/>
+          <defs>
+            <linearGradient id="regLogoGrad" x1="0%" y1="0%" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#0d9488"/>
+              <stop offset="1" stop-color="#064e3b"/>
+            </linearGradient>
+          </defs>
+          <path d="M30 14V46M14 30H46" stroke="#5eead4" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M30 20C26 15 19 18 19 25C19 33 30 40 30 40C30 40 41 33 41 25C41 18 34 15 30 20Z" fill="#ffffff" opacity="0.95"/>
+          <path d="M22 26H26L28 22L32 30L34 26H38" stroke="#0d9488" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="brand-text">
+          <h1 class="brand-title">Sen<span>Santé</span><span class="sn-badge">SN</span></h1>
+        </div>
+      </div>
+    </div>
+
+    <div class="stepper">
+      <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">
+        <div class="step-circle">
+          @if (currentStep() > 1) {
+            <i class="fa-solid fa-check"></i>
+          } @else {
+            <span>1</span>
+          }
+        </div>
+        <span class="step-label">Profil</span>
+      </div>
+
+      <div class="step-connector" [class.completed]="currentStep() > 1"></div>
+
+      <div class="step" [class.active]="currentStep() >= 2" [class.completed]="currentStep() > 2">
+        <div class="step-circle">
+          @if (currentStep() > 2) {
+            <i class="fa-solid fa-check"></i>
+          } @else {
+            <span>2</span>
+          }
+        </div>
+        <span class="step-label">Identité</span>
+      </div>
+
+      <div class="step-connector" [class.completed]="currentStep() > 2"></div>
+
+      <div class="step" [class.active]="currentStep() >= 3">
+        <div class="step-circle"><span>3</span></div>
+        <span class="step-label">Sécurité</span>
+      </div>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    @if (infoRole(); as rc) {
+      <div class="step-panel info-panel">
+        <div class="info-role-icon" [style.background]="rc.colorLight" [style.color]="rc.color">
+          <i class="fa-solid {{ rc.icon }}"></i>
+        </div>
+        <h2 class="info-role-title" [style.color]="rc.color">Compte {{ rc.label }}</h2>
+        <p class="info-role-desc">
+          Ce type de compte est créé et géré par votre administrateur SenSanté.
+          Contactez la structure sanitaire responsable de votre zone pour obtenir vos accès.
+        </p>
+        <div class="info-role-detail">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Votre responsable peut vous créer un compte depuis son tableau de bord administrateur.</span>
+        </div>
+        <button type="button" class="btn btn-outline btn-block-info" (click)="backToRoleSelection()">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Choisir un autre profil</span>
+        </button>
+      </div>
+    } @else {
+
+    @if (currentStep() === 1) {
+      <div class="step-panel">
+        <div class="step-title">
+          <h2>Quel est votre profil ?</h2>
+          <p>Choisissez votre rôle pour personnaliser votre expérience SenSanté.</p>
+        </div>
+        <div class="role-grid">
+          @for (rc of roleConfigs; track rc.value) {
+            <button type="button" class="role-card-large" [ngClass]="rc.colorClass" (click)="selectRole(rc)">
+              <div class="role-card-icon" [style.background]="rc.colorLight" [style.color]="rc.color">
+                <i class="fa-solid {{ rc.icon }}"></i>
+              </div>
+              <div class="role-card-content">
+                <strong>{{ rc.label }}</strong>
+                <p>{{ rc.description }}</p>
+              </div>
+              <i class="fa-solid fa-arrow-right role-card-arrow" [style.color]="rc.color"></i>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    @if (currentStep() === 2) {
+      <div class="step-panel">
+        @if (selectedRoleConfig(); as rc) {
+          <div class="role-banner" [style.background]="rc.colorLight" [style.border-left-color]="rc.color">
+            <i class="fa-solid {{ rc.icon }}" [style.color]="rc.color"></i>
+            <div>
+              <strong [style.color]="rc.color">{{ rc.label }}</strong>
+              <span>Complétez vos informations personnelles</span>
+            </div>
+          </div>
+        }
+
+        <form [formGroup]="registerForm" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="prenom">Prénom *</label>
+              <input
+                id="prenom"
+                type="text"
+                formControlName="prenom"
+                placeholder="Fatou"
+                [class.is-invalid]="prenom?.invalid && prenom?.touched"
+              />
+              @if (prenom?.invalid && prenom?.touched) {
+                <span class="form-error">Prénom requis (min. 2 caractères).</span>
+              }
+            </div>
+            <div class="form-group">
+              <label for="nom">Nom de famille *</label>
+              <input
+                id="nom"
+                type="text"
+                formControlName="nom"
+                placeholder="Ndiaye"
+                [class.is-invalid]="nom?.invalid && nom?.touched"
+              />
+              @if (nom?.invalid && nom?.touched) {
+                <span class="form-error">Nom requis (min. 2 caractères).</span>
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Adresse Email *</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                placeholder="fatou.ndiaye@sensante.sn"
+                [class.is-invalid]="email?.invalid && email?.touched"
+              />
+            </div>
+            @if (email?.invalid && email?.touched) {
+              <span class="form-error">Adresse email valide obligatoire.</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="telephone">
+              Téléphone <span class="optional-label">(optionnel)</span>
+            </label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-phone input-icon"></i>
+              <input
+                id="telephone"
+                type="tel"
+                formControlName="telephone"
+                placeholder="+221 77 000 00 00"
+                [class.is-invalid]="telephone?.invalid && telephone?.touched"
+              />
+            </div>
+            @if (telephone?.invalid && telephone?.touched) {
+              <span class="form-error">Numéro de téléphone invalide.</span>
+            }
+          </div>
+        </form>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-outline" (click)="prevStep()">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Retour</span>
+          </button>
+          <button type="button" class="btn btn-primary btn-next" (click)="nextStep()">
+            <span>Continuer</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (currentStep() === 3) {
+      <div class="step-panel">
+        <div class="step-title">
+          <h2>Sécurisez votre compte</h2>
+          <p>Créez un mot de passe robuste pour protéger vos données de santé.</p>
+        </div>
+
+        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
+          <div class="form-group">
+            <label for="motDePasse">Mot de passe *</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input
+                id="motDePasse"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="motDePasse"
+                placeholder="Au moins 6 caractères"
+                [class.is-invalid]="motDePasse?.invalid && motDePasse?.touched"
+              />
+              <button type="button" class="input-toggle" (click)="showPassword.set(!showPassword())">
+                <i class="fa-solid" [class.fa-eye]="!showPassword()" [class.fa-eye-slash]="showPassword()"></i>
+              </button>
+            </div>
+            @if (motDePasse?.invalid && motDePasse?.touched) {
+              <span class="form-error">Mot de passe requis (min. 6 caractères).</span>
+            }
+            @if (motDePasse?.value) {
+              <div class="password-strength">
+                <div class="strength-bars" [attr.data-score]="passwordStrengthScore">
+                  @for (i of [1, 2, 3, 4]; track i) {
+                    <div class="strength-bar" [class.active]="passwordStrengthScore >= i"></div>
+                  }
+                </div>
+                <span class="strength-label" [attr.data-score]="passwordStrengthScore">
+                  {{ passwordStrengthLabel }}
+                </span>
+              </div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="confirmMotDePasse">Confirmer le mot de passe *</label>
+            <div class="input-icon-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input
+                id="confirmMotDePasse"
+                [type]="showConfirmPassword() ? 'text' : 'password'"
+                formControlName="confirmMotDePasse"
+                placeholder="Répétez votre mot de passe"
+                [class.is-invalid]="passwordsDoNotMatch"
+              />
+              <button type="button" class="input-toggle" (click)="showConfirmPassword.set(!showConfirmPassword())">
+                <i class="fa-solid" [class.fa-eye]="!showConfirmPassword()" [class.fa-eye-slash]="showConfirmPassword()"></i>
+              </button>
+            </div>
+            @if (passwordsDoNotMatch) {
+              <span class="form-error">Les mots de passe ne correspondent pas.</span>
+            }
+          </div>
+
+          @if (selectedRoleConfig(); as rc) {
+            <div class="account-summary">
+              <i class="fa-solid fa-circle-check"></i>
+              <div>
+                <strong>{{ prenom?.value }} {{ nom?.value }}</strong>
+                <span>{{ email?.value }} · <em [style.color]="rc.color">{{ rc.label }}</em></span>
+              </div>
+            </div>
+          }
+
+          <div class="step-actions">
+            <button type="button" class="btn btn-outline" (click)="prevStep()" [disabled]="isLoading()">
+              <i class="fa-solid fa-arrow-left"></i>
+              <span>Retour</span>
+            </button>
+            <button type="submit" class="btn btn-primary btn-submit" [disabled]="isLoading()">
+              @if (isLoading()) {
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                <span>Création...</span>
+              } @else {
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Créer mon compte</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+    }
+
+    <div class="auth-footer">
+      <p>Vous possédez déjà un compte ? <a routerLink="/login">Se connecter</a></p>
+    </div>
+  </div>
+</div>

@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface FicheSuiviRepository extends JpaRepository<FicheSuivi, Long> {
 
-    // Permet de récupérer l'historique des fiches de suivi d'un enfant
     List<FicheSuivi> findByEnfantEnfantId(Long enfantId);
 }

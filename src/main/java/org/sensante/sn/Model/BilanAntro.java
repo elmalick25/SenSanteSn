@@ -29,5 +29,6 @@ public class BilanAntro {
     private Enfant enfant;
 
     @OneToOne(mappedBy = "bilan")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("bilan")
     private AlerteMAS alerte;
 }

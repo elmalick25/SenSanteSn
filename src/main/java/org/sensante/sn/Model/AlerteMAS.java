@@ -20,5 +20,6 @@ public class AlerteMAS {
 
     @OneToOne
     @JoinColumn(name = "bilan_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("alerte")
     private BilanAntro bilan;
 }

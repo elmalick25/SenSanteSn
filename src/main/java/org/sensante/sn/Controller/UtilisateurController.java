@@ -22,7 +22,7 @@ public class UtilisateurController {
         return ResponseEntity.ok(utilisateurService.createUtilisateur(utilisateur));
     }
 
-    @GetMapping("/users")
+    @GetMapping({"", "/users"})
     public ResponseEntity<List<Utilisateur>> getAllUtilisateurs() {
         return ResponseEntity.ok(utilisateurService.getAllUtilisateurs());
     }

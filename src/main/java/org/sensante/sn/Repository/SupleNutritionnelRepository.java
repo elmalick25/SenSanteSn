@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface SupleNutritionnelRepository extends JpaRepository<SupleNutritionnel, Long> {
 
-    // Permet de récupérer la liste des suppléments attribués à un enfant spécifique
     List<SupleNutritionnel> findByEnfantEnfantId(Long enfantId);
 }

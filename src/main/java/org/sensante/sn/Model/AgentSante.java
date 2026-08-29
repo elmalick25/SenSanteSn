@@ -10,5 +10,4 @@ import lombok.Setter;
 @Setter
 @DiscriminatorValue("AGENT_SANTE")
 public class AgentSante extends Utilisateur {
-    // Hérite automatiquement des champs d'Utilisateur (id, nom, prenom, email, telephone, etc.)
 }

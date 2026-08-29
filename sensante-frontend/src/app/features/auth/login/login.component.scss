@@ -1,0 +1,487 @@
+// ================= SPLIT AUTH CONTAINER =================
+.split-auth-container {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  width: 100%;
+  background-color: #ffffff;
+  overflow: hidden;
+
+  // ===== iOS / MOBILE LAYOUT (< 900px) =====
+  @media (max-width: 900px) {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-y: auto;
+    flex-direction: column;
+    background: linear-gradient(180deg, #064e3b 0%, #065f46 25%, #0f766e 40%, #f8fafc 40.1%, #f8fafc 100%);
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// ================= VISUAL HERO PANEL =================
+.auth-visual-panel {
+  flex: 1.1;
+  position: relative;
+  background: linear-gradient(145deg, #064e3b 0%, #065f46 40%, #0f766e 80%, #0d9488 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 3rem;
+  color: #ffffff;
+  overflow: hidden;
+
+  // iOS Mobile Header Styling
+  @media (max-width: 900px) {
+    padding: calc(1.5rem + env(safe-area-inset-top, 0px)) 1.5rem 2rem 1.5rem;
+    flex: none;
+    background: transparent;
+  }
+
+  .visual-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(52, 211, 153, 0.2) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.12) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .visual-content {
+    position: relative;
+    z-index: 2;
+    max-width: 440px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.25rem;
+
+    @media (max-width: 900px) {
+      gap: 0.75rem;
+    }
+  }
+
+  .top-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.775rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: #e6fffa;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    .flag-dot {
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      font-size: 0.725rem;
+      padding: 0.25rem 0.7rem;
+    }
+  }
+
+  .hero-logo-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.5rem 0;
+
+    @media (max-width: 900px) {
+      margin: 0.25rem 0;
+      gap: 0.6rem;
+    }
+
+    .hero-logo-svg {
+      width: 96px;
+      height: 96px;
+      border-radius: 24px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35), 0 0 25px rgba(94, 234, 212, 0.3);
+      transition: transform 0.3s ease;
+
+      @media (max-width: 900px) {
+        width: 68px;
+        height: 68px;
+        border-radius: 18px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    .hero-brand-name {
+      h2 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin: 0;
+        letter-spacing: -0.02em;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        line-height: 1;
+
+        span {
+          color: #5eead4;
+        }
+
+        .senegal-flag {
+          width: 24px;
+          height: 16px;
+          margin-left: 0.25rem;
+          transform: translateY(2.5px);
+          border-radius: 3px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.25);
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 900px) {
+          font-size: 1.75rem;
+        }
+      }
+    }
+  }
+
+  .visual-text-block {
+    h3 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.35rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+      @media (max-width: 900px) {
+        font-size: 1.1rem;
+        margin-bottom: 0.15rem;
+      }
+    }
+
+    p {
+      font-size: 0.875rem;
+      color: #d1fae5;
+      line-height: 1.5;
+      opacity: 0.95;
+
+      @media (max-width: 900px) {
+        font-size: 0.775rem;
+        max-width: 320px;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .visual-stats-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    @media (max-width: 900px) {
+      display: none; // Masqué sur mobile pour garder l'écran compact et immersif
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 0.35rem 0.85rem;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #ecfdf5;
+
+      i {
+        color: #34d399;
+      }
+    }
+  }
+}
+
+// ================= AUTH FORM PANEL =================
+.auth-form-panel {
+  flex: 0.9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 3.5rem;
+  background-color: #fafbfc;
+  height: 100%;
+  overflow-y: auto;
+
+  @media (min-width: 901px) {
+    overflow-y: hidden;
+  }
+
+  // iOS Bottom Sheet Design sur mobile
+  @media (max-width: 900px) {
+    padding: 1.75rem 1.5rem calc(2rem + env(safe-area-inset-bottom, 0px)) 1.5rem;
+    height: auto;
+    background: #ffffff;
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(0);
+    z-index: 10;
+  }
+
+  .form-wrapper {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  // iOS Grabber / Drag Handle
+  .ios-drag-handle {
+    display: none;
+
+    @media (max-width: 900px) {
+      display: block;
+      width: 40px;
+      height: 4.5px;
+      border-radius: 9999px;
+      background-color: #e2e8f0;
+      margin: -0.75rem auto 1.25rem auto;
+    }
+  }
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+
+  .brand-logo-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.25rem;
+
+    @media (max-width: 900px) {
+      display: none; // Évite la duplication du logo sur mobile car déjà en tête de page
+    }
+
+    .brand-logo-svg {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+    }
+
+    .brand-title {
+      font-size: 1.65rem;
+      color: var(--primary-900);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+
+      span:not(.sn-badge) {
+        color: var(--primary-600);
+      }
+    }
+  }
+
+  .form-subtitle {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+
+    @media (max-width: 900px) {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+  }
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  &.alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+
+  &.alert-info {
+    background: #f0fdfa;
+    color: #0f766e;
+    border: 1px solid #ccfbf1;
+  }
+}
+
+.login-form {
+  .form-group {
+    margin-bottom: 1.1rem;
+
+    .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+
+      label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 0;
+      }
+
+      .forgot-password-link {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--primary-600);
+        text-decoration: none;
+        transition: all 0.2s ease;
+
+        &:hover {
+          color: var(--primary-700);
+          text-decoration: underline;
+        }
+      }
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 0.35rem;
+    }
+  }
+}
+
+// iOS Input Field Styling
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .icon {
+    position: absolute;
+    left: 1.05rem;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: color 0.2s ease;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.75rem !important;
+    font-size: 0.95rem;
+    font-family: inherit;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    background-color: #f8fafc;
+    color: #0f172a;
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-600);
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3.5px rgba(13, 148, 136, 0.15);
+
+      & ~ .icon {
+        color: var(--primary-600);
+      }
+    }
+
+    &.is-invalid {
+      border-color: #ef4444;
+      background-color: #fff5f5;
+    }
+  }
+
+  .password-toggle-btn {
+    position: absolute;
+    right: 0.85rem;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    border-radius: 6px;
+
+    &:hover {
+      color: var(--primary-600);
+    }
+  }
+}
+
+// iOS Native Tactile Button
+.btn-primary {
+  background: linear-gradient(135deg, #0d9488 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+  border-radius: 14px !important;
+  padding: 0.85rem 1.25rem !important;
+  font-size: 0.95rem !important;
+  border: none !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0f766e 0%, #047857 100%) !important;
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4) !important;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2) !important;
+  }
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.auth-footer {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+
+  a {
+    font-weight: 700;
+    color: var(--primary-600);
+  }
+}

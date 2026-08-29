@@ -32,12 +32,10 @@ public class AgentSanteService {
     public AgentSante updateAgent(Long id, AgentSante agentDetails) {
         AgentSante agentExistant = getAgentById(id);
 
-        // Mise à jour des champs hérités d'Utilisateur
         agentExistant.setNom(agentDetails.getNom());
         agentExistant.setPrenom(agentDetails.getPrenom());
         agentExistant.setEmail(agentDetails.getEmail());
         agentExistant.setTelephone(agentDetails.getTelephone());
-        // Mettre à jour les autres champs spécifiques à Utilisateur si nécessaire
 
         return agentRepository.save(agentExistant);
     }

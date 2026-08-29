@@ -22,7 +22,6 @@ target/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 build/
@@ -31,3 +30,22 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Angular / Node.js ###
+sensante-frontend/node_modules/
+sensante-frontend/dist/
+sensante-frontend/.angular/
+sensante-frontend/.sass-cache/
+sensante-frontend/coverage/
+sensante-frontend/*.log
+sensante-frontend/npm-debug.log*
+sensante-frontend/yarn-debug.log*
+sensante-frontend/yarn-error.log*
+node_modules/
+
+### Misc ###
+*.log
+*.env
+.DS_Store
+Plan_Decoupage_Projet_SenSante_Angular.pdf
+generate_planning_pdf.py

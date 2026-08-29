@@ -1,10 +1,11 @@
 package org.sensante.sn.Service;
 
 import org.jspecify.annotations.NonNull;
-import org.springframework.stereotype.Service;
 import org.sensante.sn.Model.Utilisateur;
 import org.sensante.sn.Repository.UtilisateurRepository;
 import org.sensante.sn.exception.RessourceNonTrouveException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -12,12 +13,17 @@ import java.util.List;
 public class UtilisateurService {
 
     private final UtilisateurRepository utilisateurRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UtilisateurService(UtilisateurRepository utilisateurRepository) {
+    public UtilisateurService(UtilisateurRepository utilisateurRepository, PasswordEncoder passwordEncoder) {
         this.utilisateurRepository = utilisateurRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Utilisateur createUtilisateur(Utilisateur utilisateur) {
+        if (utilisateur.getMotDePasse() != null && !utilisateur.getMotDePasse().isBlank()) {
+            utilisateur.setMotDePasse(passwordEncoder.encode(utilisateur.getMotDePasse()));
+        }
         return utilisateurRepository.save(utilisateur);
     }
 
@@ -41,8 +47,12 @@ public class UtilisateurService {
         utilisateurExistant.setNom(utilisateurDetails.getNom());
         utilisateurExistant.setPrenom(utilisateurDetails.getPrenom());
         utilisateurExistant.setEmail(utilisateurDetails.getEmail());
-        utilisateurExistant.setMotDePasse(utilisateurDetails.getMotDePasse());
+        utilisateurExistant.setTelephone(utilisateurDetails.getTelephone());
         utilisateurExistant.setRole(utilisateurDetails.getRole());
+
+        if (utilisateurDetails.getMotDePasse() != null && !utilisateurDetails.getMotDePasse().isBlank()) {
+            utilisateurExistant.setMotDePasse(passwordEncoder.encode(utilisateurDetails.getMotDePasse()));
+        }
 
         return utilisateurRepository.save(utilisateurExistant);
     }
