@@ -1,9 +1,11 @@
 package org.sensante.sn.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.sensante.sn.Model.AlerteMAS;
 import org.sensante.sn.Repository.AlerteMASRepository;
-import org.sensante.sn.exception.RessourceNonTrouveException;
+import org.sensante.sn.exception.RessourceNonTrouveeException;
 
 import java.util.List;
 
@@ -29,11 +31,15 @@ public class AlerteMASService {
 
     public AlerteMAS getAlerteById(Long id) {
         return alerteRepository.findById(id)
-                .orElseThrow(() -> new RessourceNonTrouveException("Alerte MAS non trouvée avec l'id : " + id));
+                .orElseThrow(() -> new RessourceNonTrouveeException("Alerte MAS", id));
     }
 
     public List<AlerteMAS> getAlertesNonAcquittees() {
         return alerteRepository.findByAcquitteeFalse();
+    }
+
+    public Page<AlerteMAS> getAlertesNonAcquitteesPaginees(Pageable pageable) {
+        return alerteRepository.findByAcquitteeFalseOrderByDateAlerteDesc(pageable);
     }
 
     public AlerteMAS updateAlerte(Long id, AlerteMAS alerteDetails) {

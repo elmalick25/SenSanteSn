@@ -1,0 +1,782 @@
+<!-- TOAST NOTIFICATION TEMPS RÉEL -->
+<div *ngIf="toastMessage()"
+  class="fixed bottom-6 right-6 z-50 bg-[#0F4C3A] text-white px-4 py-3 rounded-lg shadow-xl border border-emerald-400/40 flex items-center gap-3 animate-bounce">
+  <span class="material-symbols-outlined text-emerald-300 text-xl">check_circle</span>
+  <span class="text-xs font-semibold whitespace-nowrap text-pretty">{{ toastMessage() }}</span>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ÉTAT 1 : CHARGEMENT (SKELETON LOADER CONFORME À LA GÉOMÉTRIE DE LA MAQUETTE) -->
+<!-- ========================================================================= -->
+<div *ngIf="isLoading()" class="space-y-4 animate-pulse">
+  <!-- Skeleton Bannière MAS -->
+  <div class="h-16 bg-red-200/50 rounded-lg"></div>
+
+  <!-- Skeleton 5 KPIs -->
+  <div class="h-24 bg-white rounded-lg border border-gray-200 p-3.5 grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div *ngFor="let i of [1,2,3,4,5]" class="space-y-2">
+      <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+      <div class="h-6 bg-gray-200 rounded w-1/2"></div>
+      <div class="h-2.5 bg-gray-200 rounded w-2/3"></div>
+    </div>
+  </div>
+
+  <!-- Skeleton Barre d'outils -->
+  <div class="h-12 bg-white rounded-lg border border-gray-200"></div>
+
+  <!-- Skeleton Tableau -->
+  <div class="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+    <div class="h-6 bg-gray-100 rounded"></div>
+    <div *ngFor="let i of [1,2,3,4,5,6]" class="h-14 bg-gray-50 rounded"></div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ÉTAT 2 : ERREUR RÉSEAU / SERVEUR -->
+<!-- ========================================================================= -->
+<div *ngIf="errorMessage() && !isLoading()"
+  class="bg-red-50 border border-red-200 rounded-lg p-6 text-center space-y-3">
+  <div class="w-12 h-12 rounded-full bg-red-100 text-red-700 flex items-center justify-center mx-auto">
+    <span class="material-symbols-outlined text-2xl">cloud_off</span>
+  </div>
+  <h3 class="text-sm font-bold text-red-900 text-balance">Échec de communication avec le serveur</h3>
+  <p class="text-xs text-red-700 max-w-md mx-auto text-pretty">{{ errorMessage() }}</p>
+  <button (click)="chargerDonnees()"
+    class="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-md shadow-xs transition-colors whitespace-nowrap cursor-pointer">
+    Réessayer la connexion
+  </button>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ÉTAT 3 & 4 : NOMINAL / SUCCÈS OU FILTRE VIDE -->
+<!-- ========================================================================= -->
+<div *ngIf="!isLoading() && !errorMessage() && overviewData()" class="space-y-4">
+  <!-- ================= 1. BANNIÈRE MAS COMPACTE & RIGOUREUSE ================= -->
+  <section *ngIf="overviewData()?.urgencePrioritaire as urgence"
+    class="bg-red-700 text-white rounded-lg shadow-xs overflow-hidden border border-red-800 transition-all duration-300">
+    <div class="p-3.5 sm:px-4 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      <!-- Left: Urgent Pulse Tag & Identification -->
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <span *ngIf="urgence.nonAcquittee"
+          class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-white text-red-700 font-extrabold text-[11px] tracking-wider uppercase shadow-2xs whitespace-nowrap flex-shrink-0">
+          <span class="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+          URGENCE MAS NON ACQUITTÉE
+        </span>
+        <span *ngIf="!urgence.nonAcquittee"
+          class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-100 text-emerald-900 font-extrabold text-[11px] tracking-wider uppercase whitespace-nowrap flex-shrink-0">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          URGENCE ACQUITTÉE • EN ATTENTE
+        </span>
+
+        <div class="h-5 w-px bg-red-500/60 hidden sm:block"></div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-extrabold tracking-tight whitespace-nowrap">{{ urgence.nomCompletEnfant }}</span>
+          <span
+            class="text-xs bg-red-800/80 px-1.5 py-0.5 rounded text-red-100 font-medium whitespace-nowrap flex-shrink-0">{{
+            urgence.ageTexte }}</span>
+          <span class="text-[11px] font-mono text-red-200 whitespace-nowrap flex-shrink-0">{{ urgence.matricule
+            }}</span>
+        </div>
+      </div>
+
+      <!-- Middle: Clinical Indicators Ribbon -->
+      <div
+        class="flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs bg-red-800/60 px-3 py-1.5 rounded-md border border-red-500/40">
+        <div class="flex items-center gap-1.5 whitespace-nowrap">
+          <span class="text-red-200 text-[11px]">Périmètre Brachial (MUAC)&nbsp;:</span>
+          <span class="font-extrabold text-sm text-yellow-300 bg-red-950/60 px-2 py-0.5 rounded font-mono">{{
+            urgence.muacTexte }}</span>
+        </div>
+        <span class="text-red-400 hidden sm:inline">•</span>
+        <div class="flex items-center gap-1 whitespace-nowrap">
+          <span class="text-red-200 text-[11px]">Œdèmes bilatéraux&nbsp;:</span>
+          <span class="font-bold text-white bg-red-600 px-1.5 py-0.2 rounded text-[10px]">{{ urgence.oedemesTexte
+            }}</span>
+        </div>
+        <span class="text-red-400 hidden sm:inline">•</span>
+        <div class="text-red-100 truncate text-[11px]">
+          <span class="text-red-300">Tuteur&nbsp;:</span> {{ urgence.tuteurNom }} ({{ urgence.tuteurTelephone }}) • {{
+          urgence.adresse }}
+        </div>
+      </div>
+
+      <!-- Right: Instant Direct Action Buttons -->
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button *ngIf="urgence.nonAcquittee" (click)="acquitterAlerte(urgence.alerteId)"
+          [disabled]="isProcessingAction()"
+          class="h-8 px-3 rounded text-xs font-semibold bg-red-800 hover:bg-red-900 text-white border border-red-500/60 transition-colors whitespace-nowrap cursor-pointer disabled:opacity-50">
+          Acquitter &amp; Planifier
+        </button>
+        <button (click)="referSamu(urgence.enfantId)" [disabled]="isProcessingAction()"
+          class="h-8 px-3.5 rounded text-xs font-extrabold bg-white hover:bg-red-50 text-red-700 flex items-center gap-1.5 transition-all shadow-xs active:scale-[0.98] whitespace-nowrap cursor-pointer disabled:opacity-50">
+          <span class="material-symbols-outlined text-[16px] text-red-600">emergency_share</span>
+          <span>Référer SAMU / District</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2. BARRE DE MÉTRIQUES HORIZONTALES UNIFIÉE ================= -->
+  <section *ngIf="overviewData()?.kpis as kpi" class="bg-white rounded-lg border border-[#D8E1DD] shadow-2xs p-3.5">
+    <div class="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-[#E2E8E5]">
+      <!-- KPI 1: Cohorte Active -->
+      <div class="px-3 py-1">
+        <div class="flex items-center justify-between text-xs text-gray-500 font-medium">
+          <span class="whitespace-nowrap">Enfants Actifs Suivis</span>
+          <span class="material-symbols-outlined text-gray-400 text-[17px]">groups</span>
+        </div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span class="text-2xl font-extrabold text-gray-900 tracking-tight font-mono">{{ kpi.enfantsActifsSuivis
+            }}</span>
+          <span
+            class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded whitespace-nowrap flex-shrink-0">{{
+            kpi.variationSemaine }}</span>
+        </div>
+        <div class="mt-1 text-[11px] text-gray-500 whitespace-nowrap">{{ kpi.statutCarnet }}</div>
+      </div>
+
+      <!-- KPI 2: Alertes MAS -->
+      <div class="px-3 py-1">
+        <div class="flex items-center justify-between text-xs font-medium text-red-700">
+          <span class="flex items-center gap-1 whitespace-nowrap">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+            Alertes MAS (&lt;115mm)
+          </span>
+          <span class="material-symbols-outlined text-red-500 text-[17px]">error</span>
+        </div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span class="text-2xl font-extrabold text-red-600 tracking-tight font-mono">{{ kpi.alertesMasCritiques < 10
+              ? '0' + kpi.alertesMasCritiques : kpi.alertesMasCritiques }}</span>
+              <span
+                class="text-[10px] uppercase font-bold text-red-800 bg-red-100 px-1.5 py-0.2 rounded whitespace-nowrap flex-shrink-0">{{
+                kpi.badgeMas }}</span>
+        </div>
+        <div class="mt-1 text-[11px] text-red-700 font-medium whitespace-nowrap">{{ kpi.sousTitreMas }}</div>
+      </div>
+
+      <!-- KPI 3: Cas MAM -->
+      <div class="px-3 py-1">
+        <div class="flex items-center justify-between text-xs font-medium text-amber-800">
+          <span class="flex items-center gap-1 whitespace-nowrap">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+            Cas MAM (115–124mm)
+          </span>
+          <span class="material-symbols-outlined text-amber-500 text-[17px]">warning</span>
+        </div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span class="text-2xl font-extrabold text-amber-700 tracking-tight font-mono">{{ kpi.casMamTotal }}</span>
+          <span
+            class="text-[11px] font-medium text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded whitespace-nowrap flex-shrink-0">{{
+            kpi.sousTitreMam }}</span>
+        </div>
+        <div class="mt-1 text-[11px] text-gray-500 whitespace-nowrap">{{ kpi.statutMam }}</div>
+      </div>
+
+      <!-- KPI 4: Perdus de Vue & Demandes -->
+      <div class="px-3 py-1">
+        <div class="flex items-center justify-between text-xs text-gray-500 font-medium">
+          <span class="whitespace-nowrap">Perdus de Vue (&gt;30j)</span>
+          <span class="material-symbols-outlined text-gray-400 text-[17px]">person_search</span>
+        </div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span class="text-2xl font-extrabold text-gray-800 tracking-tight font-mono">{{ kpi.perdusDeVue < 10 ? '0' +
+              kpi.perdusDeVue : kpi.perdusDeVue }}</span>
+              <span
+                class="text-[11px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded whitespace-nowrap flex-shrink-0">{{
+                kpi.badgePerdus }}</span>
+        </div>
+        <div class="mt-1 text-[11px] text-gray-500 whitespace-nowrap">{{ kpi.actionPerdus }}</div>
+      </div>
+
+      <!-- KPI 5: Stock ATPE Cartons -->
+      <div class="px-3 py-1 col-span-2 md:col-span-1">
+        <div class="flex items-center justify-between text-xs text-gray-500 font-medium">
+          <span class="whitespace-nowrap">Stock ATPE Disponible</span>
+          <span class="material-symbols-outlined text-[#0F4C3A] text-[17px]">inventory_2</span>
+        </div>
+        <div class="mt-1 flex items-baseline justify-between">
+          <span class="text-2xl font-extrabold text-gray-900 tracking-tight font-mono">
+            {{ kpi.stockAtpeCartons }} <span class="text-xs font-normal text-gray-500">ctns</span>
+          </span>
+          <span class="text-xs font-bold text-emerald-800">{{ kpi.pourcentageStock }}%</span>
+        </div>
+        <div class="w-full bg-gray-100 h-1.5 rounded-full mt-1.5 overflow-hidden">
+          <div class="bg-[#006C4A] h-1.5 rounded-full" [style.width.%]="kpi.pourcentageStock"></div>
+        </div>
+        <div class="mt-1 text-[10px] text-gray-500 text-right whitespace-nowrap">{{ kpi.autonomieEstimee }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3. COMMAND CENTER FILTER TOOLBAR & QUICK TABS ================= -->
+  <section class="bg-white rounded-xl border border-[#D8E1DD] shadow-2xs p-3">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <!-- Quick Roster Filter Tabs -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scrollbar">
+        <!-- Tab: Tous -->
+        <button (click)="changerTab('TOUS')" [class.bg-[#0F4C3A]]="activeTab() === 'TOUS'"
+          [class.text-white]="activeTab() === 'TOUS'" [class.bg-gray-50]="activeTab() !== 'TOUS'"
+          [class.text-gray-700]="activeTab() !== 'TOUS'"
+          class="h-9 sm:h-10 px-3.5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-2xs whitespace-nowrap transition-all cursor-pointer">
+          <span>Tous les Suivis</span>
+          <span [ngClass]="activeTab() === 'TOUS' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'"
+            class="px-2 py-0.5 rounded-full text-[10px] font-bold">
+            {{ overviewData()?.kpis?.enfantsActifsSuivis }}
+          </span>
+        </button>
+
+        <!-- Tab: Urgences MAS -->
+        <button (click)="changerTab('MAS')" [class.bg-red-700]="activeTab() === 'MAS'"
+          [class.text-white]="activeTab() === 'MAS'" [class.bg-red-50]="activeTab() !== 'MAS'"
+          [class.text-red-700]="activeTab() !== 'MAS'"
+          class="h-9 sm:h-10 px-3.5 rounded-lg text-xs font-bold border border-red-200 flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer hover:bg-red-100">
+          <span class="w-2 h-2 rounded-full bg-red-600" [class.bg-white]="activeTab() === 'MAS'"></span>
+          <span>Urgences MAS</span>
+          <span [ngClass]="activeTab() === 'MAS' ? 'bg-white/20 text-white' : 'bg-red-200 text-red-800'"
+            class="px-2 py-0.5 rounded-full text-[10px] font-bold">
+            {{ overviewData()?.kpis?.alertesMasCritiques }}
+          </span>
+        </button>
+
+        <!-- Tab: MAM à risque -->
+        <button (click)="changerTab('MAM')" [class.bg-amber-600]="activeTab() === 'MAM'"
+          [class.text-white]="activeTab() === 'MAM'" [class.bg-amber-50]="activeTab() !== 'MAM'"
+          [class.text-amber-800]="activeTab() !== 'MAM'"
+          class="h-9 sm:h-10 px-3.5 rounded-lg text-xs font-semibold border border-amber-200 flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer hover:bg-amber-100">
+          <span class="w-2 h-2 rounded-full bg-amber-500" [class.bg-white]="activeTab() === 'MAM'"></span>
+          <span>MAM à risque</span>
+          <span [ngClass]="activeTab() === 'MAM' ? 'bg-white/20 text-white' : 'bg-amber-200 text-amber-900'"
+            class="px-2 py-0.5 rounded-full text-[10px] font-bold">
+            {{ overviewData()?.kpis?.casMamTotal }}
+          </span>
+        </button>
+
+        <!-- Tab: Perdus de vue -->
+        <button (click)="changerTab('PERDUS')" [class.bg-gray-800]="activeTab() === 'PERDUS'"
+          [class.text-white]="activeTab() === 'PERDUS'" [class.bg-gray-50]="activeTab() !== 'PERDUS'"
+          [class.text-gray-700]="activeTab() !== 'PERDUS'"
+          class="h-9 sm:h-10 px-3.5 rounded-lg text-xs font-semibold border border-gray-200 flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer hover:bg-gray-100">
+          <span class="w-2 h-2 rounded-full bg-gray-400" [class.bg-white]="activeTab() === 'PERDUS'"></span>
+          <span>Perdus de vue</span>
+          <span [ngClass]="activeTab() === 'PERDUS' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-800'"
+            class="px-2 py-0.5 rounded-full text-[10px] font-bold">
+            {{ overviewData()?.kpis?.perdusDeVue }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Filter Selectors & Search & Export -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Live Search Field in Filter Bar -->
+        <div class="relative w-44 sm:w-56">
+          <span
+            class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
+          <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+            placeholder="Rechercher nom, N°..."
+            class="w-full h-9 sm:h-10 pl-8 pr-3 text-xs bg-[#F8FAFA] border border-[#CBD5E1] rounded-lg text-gray-800 placeholder-gray-400 focus:bg-white focus:border-[#0F4C3A] focus:outline-none transition-all" />
+        </div>
+
+        <!-- Zone Sector -->
+        <div class="relative">
+          <select [(ngModel)]="selectedSecteur" (ngModelChange)="onFilterChange()"
+            class="h-9 sm:h-10 pl-3 pr-8 text-xs bg-[#F8FAFA] border border-[#CBD5E1] rounded-lg text-gray-800 focus:border-[#0F4C3A] focus:outline-none cursor-pointer">
+            <option *ngFor="let sec of overviewData()?.secteursDisponibles" [value]="sec">{{ sec }}</option>
+          </select>
+        </div>
+
+        <!-- Age Range -->
+        <div class="relative">
+          <select [(ngModel)]="selectedTrancheAge" (ngModelChange)="onFilterChange()"
+            class="h-9 sm:h-10 pl-3 pr-8 text-xs bg-[#F8FAFA] border border-[#CBD5E1] rounded-lg text-gray-800 focus:border-[#0F4C3A] focus:outline-none cursor-pointer">
+            <option *ngFor="let tr of overviewData()?.tranchesAgeDisponibles" [value]="tr">{{ tr }}</option>
+          </select>
+        </div>
+
+        <div class="h-5 w-px bg-gray-200 hidden sm:block"></div>
+
+        <!-- Actions: Export / Print & Nouveau Triage -->
+        <button (click)="exporterFiche()"
+          class="h-9 sm:h-10 px-3 bg-white border border-[#CBD5E1] hover:border-[#0F4C3A] text-gray-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer shadow-2xs">
+          <span class="material-symbols-outlined text-[17px]">print</span>
+          <span>Exporter Fiche</span>
+        </button>
+
+        <button (click)="ouvrirModalTriage()"
+          class="h-9 sm:h-10 px-3.5 bg-[#0F4C3A] hover:bg-emerald-900 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs whitespace-nowrap cursor-pointer">
+          <span class="material-symbols-outlined text-[17px]">add</span>
+          <span>Nouveau Triage</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4. TABLEAU DE COHORTE TACTIQUE ================= -->
+  <section class="bg-white rounded-lg border border-[#D8E1DD] shadow-2xs overflow-hidden">
+    <!-- Empty State -->
+    <div *ngIf="overviewData()?.cohorte?.length === 0" class="py-12 px-4 text-center space-y-3">
+      <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
+        <span class="material-symbols-outlined text-2xl">search_off</span>
+      </div>
+      <h3 class="text-sm font-bold text-gray-900 text-balance">Aucun dossier ne correspond à vos filtres</h3>
+      <p class="text-xs text-gray-500 max-w-sm mx-auto text-pretty">
+        Aucun enfant trouvé pour le secteur ou statut sélectionné. Vous pouvez réinitialiser les filtres.
+      </p>
+      <button (click)="reinitialiserFiltres()"
+        class="px-3.5 py-1.5 bg-[#0F4C3A] text-white text-xs font-bold rounded-md shadow-xs hover:bg-emerald-900 transition-colors whitespace-nowrap cursor-pointer">
+        Réinitialiser les filtres
+      </button>
+    </div>
+
+    <!-- Table content -->
+    <div *ngIf="(overviewData()?.cohorte?.length ?? 0) > 0" class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr
+            class="bg-[#F4F7F5] border-b border-[#D8E1DD] text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+            <th class="py-2.5 px-4 w-6">
+              <input type="checkbox" [checked]="isAllSelected()" (change)="toggleSelectAll($event)"
+                class="rounded text-[#0F4C3A] focus:ring-[#0F4C3A] border-gray-300 cursor-pointer" />
+            </th>
+            <th class="py-2.5 px-3 whitespace-nowrap">Enfant / Matricule</th>
+            <th class="py-2.5 px-3 whitespace-nowrap">Tuteur &amp; Localisation</th>
+            <th class="py-2.5 px-3 whitespace-nowrap">Statut Nutritionnel &amp; MUAC</th>
+            <th class="py-2.5 px-3 whitespace-nowrap">Évolution Poids / MUAC</th>
+            <th class="py-2.5 px-3 whitespace-nowrap">Ration ATPE</th>
+            <th class="py-2.5 px-4 text-right whitespace-nowrap">Intervention Immédiate</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E2E8E5] text-xs">
+          <tr *ngFor="let enfant of overviewData()?.cohorte" [ngClass]="{
+              'bg-red-50 hover:bg-red-100': enfant.statutNutritionnel === 'MAS',
+              'bg-amber-50 hover:bg-amber-100': enfant.perduDeVue,
+              'hover:bg-amber-50': enfant.statutNutritionnel === 'MAM' && !enfant.perduDeVue,
+              'hover:bg-emerald-50': enfant.statutNutritionnel === 'NORMAL'
+            }" class="transition-colors">
+            <!-- Checkbox -->
+            <td class="py-3 px-4">
+              <input type="checkbox" [checked]="isSelected(enfant.id)" (change)="toggleSelectRow(enfant.id)"
+                [class.text-red-600]="enfant.statutNutritionnel === 'MAS'"
+                [class.focus:ring-red-600]="enfant.statutNutritionnel === 'MAS'"
+                [class.text-[#0F4C3A]="enfant.statutNutritionnel !== 'MAS'"
+                [class.focus:ring-[#0F4C3A]="enfant.statutNutritionnel !== 'MAS'"
+                class="rounded border-gray-300 cursor-pointer" />
+            </td>
+
+            <!-- Enfant / Matricule -->
+            <td class="py-3 px-3">
+              <div class="flex items-center gap-2.5">
+                <div [class.bg-red-600]="enfant.statutNutritionnel === 'MAS'"
+                  [class.bg-amber-500]="enfant.statutNutritionnel === 'MAM' && !enfant.perduDeVue"
+                  [class.bg-gray-500]="enfant.perduDeVue" [class.bg-[#006C4A]="enfant.statutNutritionnel === 'NORMAL'"
+                  class="w-8 h-8 rounded-md text-white font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs">
+                  {{ enfant.initiales }}
+                </div>
+                <div>
+                  <div class="font-bold text-gray-900 flex items-center gap-1.5">
+                    <span class="whitespace-nowrap">{{ enfant.nomComplet }}</span>
+                    <span [class.bg-red-200]="enfant.statutNutritionnel === 'MAS'"
+                      [class.text-red-900]="enfant.statutNutritionnel === 'MAS'"
+                      [class.bg-amber-200]="enfant.perduDeVue" [class.text-amber-900]="enfant.perduDeVue"
+                      [class.bg-gray-100]="enfant.statutNutritionnel !== 'MAS' && !enfant.perduDeVue"
+                      [class.text-gray-700]="enfant.statutNutritionnel !== 'MAS' && !enfant.perduDeVue"
+                      class="text-[10px] font-bold px-1 py-0.2 rounded whitespace-nowrap flex-shrink-0">
+                      {{ enfant.ageTexte }}
+                    </span>
+                  </div>
+                  <div class="text-[11px] font-mono text-gray-500 whitespace-nowrap">{{ enfant.matricule }}</div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Tuteur & Localisation -->
+            <td class="py-3 px-3">
+              <div class="font-medium text-gray-900 whitespace-nowrap">
+                {{ enfant.tuteurNom }}
+                <span class="text-gray-500 font-mono text-[11px]">({{ enfant.tuteurTelephone }})</span>
+              </div>
+              <div class="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5 whitespace-nowrap">
+                <span *ngIf="enfant.anomalieLocalisation" class="material-symbols-outlined text-[13px] text-amber-600">
+                  wrong_location
+                </span>
+                <span *ngIf="!enfant.anomalieLocalisation" [class.text-red-500]="enfant.statutNutritionnel === 'MAS'"
+                  [class.text-gray-400]="enfant.statutNutritionnel !== 'MAS'"
+                  class="material-symbols-outlined text-[13px]">
+                  location_on
+                </span>
+                <span [class.text-amber-800]="enfant.anomalieLocalisation">{{ enfant.adresse }}</span>
+              </div>
+            </td>
+
+            <!-- Statut Nutritionnel & MUAC -->
+            <td class="py-3 px-3">
+              <div [class.bg-red-600]="enfant.statutNutritionnel === 'MAS'"
+                [class.text-white]="enfant.statutNutritionnel === 'MAS'"
+                [class.bg-amber-100]="enfant.statutNutritionnel === 'MAM'"
+                [class.text-amber-900]="enfant.statutNutritionnel === 'MAM'"
+                [class.border-amber-300]="enfant.statutNutritionnel === 'MAM'"
+                [class.border]="enfant.statutNutritionnel !== 'MAS'"
+                [class.bg-emerald-100]="enfant.statutNutritionnel === 'NORMAL'"
+                [class.text-emerald-900]="enfant.statutNutritionnel === 'NORMAL'"
+                [class.border-emerald-300]="enfant.statutNutritionnel === 'NORMAL'"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-bold text-xs tracking-wide whitespace-nowrap flex-shrink-0">
+                <span *ngIf="enfant.statutNutritionnel === 'MAS'"
+                  class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                <span *ngIf="enfant.statutNutritionnel === 'MAM'" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                <span *ngIf="enfant.statutNutritionnel === 'NORMAL'"
+                  class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                <span>{{ enfant.muacBadgeTexte }}</span>
+              </div>
+              <div [class.text-red-700]="enfant.statutNutritionnel === 'MAS' || enfant.perduDeVue"
+                [class.text-amber-800]="enfant.statutNutritionnel === 'MAM' && !enfant.perduDeVue"
+                [class.text-emerald-700]="enfant.statutNutritionnel === 'NORMAL'"
+                class="text-[11px] font-semibold mt-0.5 whitespace-nowrap">
+                {{ enfant.statutCliniqueDetail }}
+              </div>
+            </td>
+
+            <!-- Évolution Poids / MUAC -->
+            <td class="py-3 px-3">
+              <div [class.text-red-700]="enfant.directionTendance === 'BAISSE'"
+                [class.text-emerald-700]="enfant.directionTendance === 'HAUSSE'"
+                [class.text-amber-800]="enfant.directionTendance === 'STABLE' && enfant.statutNutritionnel === 'MAM'"
+                [class.text-gray-700]="enfant.directionTendance === 'STABLE' && enfant.statutNutritionnel === 'NORMAL'"
+                class="font-bold flex items-center gap-1 whitespace-nowrap">
+                <span *ngIf="enfant.directionTendance === 'BAISSE' && !enfant.perduDeVue"
+                  class="material-symbols-outlined text-[15px]">
+                  south
+                </span>
+                <span *ngIf="enfant.directionTendance === 'HAUSSE' && enfant.statutNutritionnel !== 'NORMAL'"
+                  class="material-symbols-outlined text-[15px]">
+                  north
+                </span>
+                <span *ngIf="enfant.directionTendance === 'HAUSSE' && enfant.statutNutritionnel === 'NORMAL'"
+                  class="material-symbols-outlined text-[15px]">
+                  check_circle
+                </span>
+                <span *ngIf="enfant.directionTendance === 'STABLE' && !enfant.perduDeVue"
+                  class="material-symbols-outlined text-[15px]">
+                  east
+                </span>
+                <span *ngIf="enfant.perduDeVue" class="material-symbols-outlined text-[15px]">
+                  history_toggle_off
+                </span>
+                <span>{{ enfant.evolutionTexte }}</span>
+              </div>
+              <div class="text-[11px] text-gray-600 whitespace-nowrap">
+                {{ enfant.statutSurveillance }}
+              </div>
+            </td>
+
+            <!-- Ration ATPE -->
+            <td class="py-3 px-3">
+              <!-- Cas Épuisé MAS -->
+              <span *ngIf="enfant.statutStockBadge === 'EPUISE' && enfant.statutNutritionnel === 'MAS'"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-900 border border-red-200 whitespace-nowrap flex-shrink-0">
+                <span class="material-symbols-outlined text-[13px]">warning</span>
+                <span>{{ enfant.rationStatutTexte }}</span>
+              </span>
+
+              <!-- Cas Perdu de vue -->
+              <span *ngIf="enfant.statutStockBadge === 'EPUISE' && enfant.perduDeVue"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900 whitespace-nowrap flex-shrink-0">
+                <span>{{ enfant.rationStatutTexte }}</span>
+              </span>
+
+              <!-- Cas Normal Stock -->
+              <div *ngIf="enfant.statutStockBadge === 'VALIDE'">
+                <div class="font-semibold text-gray-900 whitespace-nowrap">{{ enfant.rationStatutTexte }}</div>
+                <div [class.text-amber-700]="enfant.sachetsRestants <= 4"
+                  [class.text-emerald-700]="enfant.sachetsRestants > 4"
+                  class="text-[10px] font-medium whitespace-nowrap">
+                  {{ enfant.rationSousTitre }}
+                </div>
+              </div>
+
+              <!-- Cas Sevrage Réussi -->
+              <span *ngIf="enfant.statutStockBadge === 'SEVRAGE'"
+                class="text-[11px] font-mono text-gray-400 whitespace-nowrap">
+                {{ enfant.rationStatutTexte }}
+              </span>
+
+              <!-- Cas Suivi sain -->
+              <span *ngIf="enfant.statutStockBadge === 'NA'"
+                class="text-[11px] font-mono text-gray-400 whitespace-nowrap">
+                {{ enfant.rationStatutTexte }}
+              </span>
+            </td>
+
+            <!-- Intervention Immédiate -->
+            <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+              <!-- Action Button Contextuel -->
+              <button (click)="executerAction(enfant)" [disabled]="isProcessingAction()"
+                [class.bg-red-600]="enfant.actionPrincipaleType === 'REFERER_SAMU'"
+                [class.hover:bg-red-700]="enfant.actionPrincipaleType === 'REFERER_SAMU'"
+                [class.text-white]="enfant.actionPrincipaleType === 'REFERER_SAMU' || enfant.actionPrincipaleType === 'DISPENSER_ATPE' || enfant.actionPrincipaleType === 'RELANCER'"
+                [class.bg-[#0F4C3A]="enfant.actionPrincipaleType === 'DISPENSER_ATPE' || enfant.actionPrincipaleType === 'RELANCER'"
+                [class.hover:bg-emerald-800]="enfant.actionPrincipaleType === 'DISPENSER_ATPE' || enfant.actionPrincipaleType === 'RELANCER'"
+                [class.bg-white]="enfant.actionPrincipaleType === 'VISITE_DOMICILE' || enfant.actionPrincipaleType === 'CLOTURER' || enfant.actionPrincipaleType === 'PLANIFIER_VISITE'"
+                [class.border]="enfant.actionPrincipaleType === 'VISITE_DOMICILE' || enfant.actionPrincipaleType === 'CLOTURER' || enfant.actionPrincipaleType === 'PLANIFIER_VISITE'"
+                [class.border-[#A3C9BC]="enfant.actionPrincipaleType === 'VISITE_DOMICILE' || enfant.actionPrincipaleType === 'PLANIFIER_VISITE'"
+                [class.text-[#0F4C3A]="enfant.actionPrincipaleType === 'VISITE_DOMICILE' || enfant.actionPrincipaleType === 'PLANIFIER_VISITE'"
+                [class.border-[#CBD5E1]="enfant.actionPrincipaleType === 'CLOTURER'"
+                [class.text-gray-700]="enfant.actionPrincipaleType === 'CLOTURER'"
+                class="px-2.5 py-1.5 font-bold rounded text-xs transition-colors shadow-2xs whitespace-nowrap cursor-pointer disabled:opacity-50">
+                {{ enfant.actionPrincipaleLabel }}
+              </button>
+
+              <!-- Fiche Modal Button -->
+              <button (click)="ouvrirFicheEnfant(enfant)"
+                class="px-2 py-1.5 bg-white border border-[#CBD5E1] hover:border-gray-400 text-gray-700 font-medium rounded text-xs whitespace-nowrap cursor-pointer">
+                Fiche
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tactical Table Footer with Batch Controls & Pagination -->
+    <div
+      class="bg-[#F8FAFA] border-t border-[#D8E1DD] px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
+      <div class="flex items-center gap-3">
+        <span>
+          Affichage de <strong>1–{{ overviewData()?.cohorte?.length }}</strong> sur
+          <strong>{{ overviewData()?.totalAlertesActives }}</strong> alertes actives
+        </span>
+        <span class="text-gray-300">|</span>
+        <span class="text-[11px] text-gray-500">
+          <strong>{{ selectedEnfantIds().size }}</strong> sélectionné(s) pour action groupée
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button disabled
+          class="px-2.5 py-1 rounded bg-white border border-[#CBD5E1] text-gray-400 cursor-not-allowed text-xs whitespace-nowrap">
+          Précédent
+        </button>
+        <span class="px-2.5 py-1 rounded bg-[#0F4C3A] text-white font-bold text-xs">1</span>
+        <button
+          class="px-2.5 py-1 rounded bg-white border border-[#CBD5E1] text-gray-700 hover:bg-gray-100 text-xs whitespace-nowrap cursor-pointer">
+          2
+        </button>
+        <button
+          class="px-2.5 py-1 rounded bg-white border border-[#CBD5E1] text-gray-700 hover:bg-gray-100 text-xs whitespace-nowrap cursor-pointer">
+          3
+        </button>
+        <button
+          class="px-2.5 py-1 rounded bg-white border border-[#CBD5E1] text-gray-700 hover:bg-gray-100 text-xs whitespace-nowrap cursor-pointer">
+          Suivant
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 5. CLINICAL DECISION SUPPORT CARDS ================= -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-3.5 pb-4">
+    <!-- Card 1: Protocole MUAC Sénégal -->
+    <div class="bg-white border border-[#D8E1DD] rounded-lg p-3 flex items-start gap-3 shadow-2xs">
+      <div class="w-8 h-8 rounded bg-emerald-50 text-emerald-800 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">straighten</span>
+      </div>
+      <div>
+        <h4 class="text-xs font-bold text-gray-900 text-balance">Protocole Tri-Couleur MUAC</h4>
+        <p class="text-[11px] text-gray-600 mt-0.5 leading-tight text-pretty">
+          <span class="text-red-700 font-bold">Rouge &lt;115mm</span> (MAS&nbsp;: Référence immédiate) •
+          <span class="text-amber-700 font-bold">Jaune 115–124mm</span> (MAM&nbsp;: ATPE) •
+          <span class="text-emerald-700 font-bold">Vert ≥125mm</span> (Normal).
+        </p>
+      </div>
+    </div>
+
+    <!-- Card 2: Réapprovisionnement ATPE -->
+    <div class="bg-white border border-[#D8E1DD] rounded-lg p-3 flex items-start gap-3 shadow-2xs">
+      <div class="w-8 h-8 rounded bg-blue-50 text-blue-800 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">local_shipping</span>
+      </div>
+      <div>
+        <h4 class="text-xs font-bold text-gray-900 text-balance">Ravitaillement District</h4>
+        <p class="text-[11px] text-gray-600 mt-0.5 leading-tight text-pretty">
+          Livraison programmée de 50&nbsp;cartons Plumpy'Nut le <strong>Jeudi 17 Octobre</strong> (Dispensaire Médina).
+        </p>
+      </div>
+    </div>
+
+    <!-- Card 3: Hotline SAMU / Pédiatrie -->
+    <div class="bg-white border border-[#D8E1DD] rounded-lg p-3 flex items-start gap-3 shadow-2xs">
+      <div class="w-8 h-8 rounded bg-red-50 text-red-700 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">ring_volume</span>
+      </div>
+      <div>
+        <h4 class="text-xs font-bold text-gray-900 text-balance">Ligne Prioritaire Réf. Urgence</h4>
+        <p class="text-[11px] text-gray-600 mt-0.5 leading-tight text-pretty">
+          SAMU / Poste Médina&nbsp;:
+          <strong class="text-red-700 font-mono text-xs">800&nbsp;00&nbsp;24&nbsp;24</strong>
+          (Touche directe Bajenu Gox).
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALE 1 : FICHE ENFANT TACTIQUE (CLINICAL DETAIL POPUP) -->
+<!-- ========================================================================= -->
+<div *ngIf="selectedEnfantDetail() as child"
+  class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+  <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200">
+    <div class="px-5 py-4 bg-[#0F4C3A] text-white flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded bg-white text-[#0F4C3A] flex items-center justify-center font-bold">
+          {{ child.initiales }}
+        </div>
+        <div>
+          <h3 class="text-sm font-bold">{{ child.nomComplet }}</h3>
+          <p class="text-[11px] text-emerald-200">{{ child.matricule }} • {{ child.ageTexte }}</p>
+        </div>
+      </div>
+      <button (click)="fermerFicheEnfant()" class="p-1 rounded hover:bg-white/10 text-white cursor-pointer">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+    </div>
+
+    <div class="p-5 space-y-4 text-xs">
+      <div class="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+        <div>
+          <span class="text-gray-500 block text-[10px] uppercase font-semibold">Tuteur / Mère</span>
+          <span class="font-bold text-gray-900">{{ child.tuteurNom }}</span>
+          <span class="text-gray-500 block font-mono">{{ child.tuteurTelephone }}</span>
+        </div>
+        <div>
+          <span class="text-gray-500 block text-[10px] uppercase font-semibold">Localisation</span>
+          <span class="font-medium text-gray-800">{{ child.adresse }}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="p-2.5 rounded-lg border border-gray-200 bg-white">
+          <span class="text-gray-500 block text-[10px]">MUAC Actuel</span>
+          <span class="text-sm font-extrabold font-mono text-gray-900">{{ child.muacMm }} mm</span>
+        </div>
+        <div class="p-2.5 rounded-lg border border-gray-200 bg-white">
+          <span class="text-gray-500 block text-[10px]">Poids</span>
+          <span class="text-sm font-extrabold font-mono text-gray-900">{{ child.poidsActuelKg }} kg</span>
+        </div>
+        <div class="p-2.5 rounded-lg border border-gray-200 bg-white">
+          <span class="text-gray-500 block text-[10px]">Statut</span>
+          <span [class.text-red-700]="child.statutNutritionnel === 'MAS'"
+            [class.text-amber-700]="child.statutNutritionnel === 'MAM'"
+            [class.text-emerald-700]="child.statutNutritionnel === 'NORMAL'" class="text-sm font-extrabold">
+            {{ child.statutNutritionnel }}
+          </span>
+        </div>
+      </div>
+
+      <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-emerald-900">
+        <span class="font-bold block text-[11px]">Consigne d'intervention terrain&nbsp;:</span>
+        <p class="text-[11px] mt-0.5 leading-relaxed">{{ child.statutCliniqueDetail }} • {{ child.rationStatutTexte }}
+        </p>
+      </div>
+    </div>
+
+    <div class="px-5 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
+      <button (click)="fermerFicheEnfant()"
+        class="px-3 py-1.5 rounded bg-white border border-gray-300 text-gray-700 font-semibold text-xs hover:bg-gray-100 cursor-pointer whitespace-nowrap">
+        Fermer
+      </button>
+      <button (click)="executerAction(child); fermerFicheEnfant()"
+        class="px-3 py-1.5 rounded bg-[#0F4C3A] text-white font-bold text-xs hover:bg-emerald-900 cursor-pointer whitespace-nowrap">
+        {{ child.actionPrincipaleLabel }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALE 2 : FORMULAIRE NOUVEAU TRIAGE TERRAIN -->
+<!-- ========================================================================= -->
+<div *ngIf="showTriageModal()"
+  class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+  <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-200">
+    <div class="px-5 py-4 bg-[#0F4C3A] text-white flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined">add_circle</span>
+        <h3 class="text-sm font-bold">Nouveau Triage Pédiatrique</h3>
+      </div>
+      <button (click)="fermerModalTriage()" class="p-1 rounded hover:bg-white/10 text-white cursor-pointer">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+    </div>
+
+    <div class="p-5 space-y-3 text-xs">
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Prénom de l'enfant *</label>
+          <input type="text" [(ngModel)]="nouveauTriage.prenom" placeholder="Ex: Seynabou"
+            class="w-full h-8 px-2.5 border border-gray-300 rounded focus:border-[#0F4C3A] focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Nom *</label>
+          <input type="text" [(ngModel)]="nouveauTriage.nom" placeholder="Ex: Ba"
+            class="w-full h-8 px-2.5 border border-gray-300 rounded focus:border-[#0F4C3A] focus:outline-none" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Âge (mois)</label>
+          <input type="number" [(ngModel)]="nouveauTriage.ageMois"
+            class="w-full h-8 px-2.5 border border-gray-300 rounded focus:border-[#0F4C3A] focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Poids (kg)</label>
+          <input type="number" step="0.1" [(ngModel)]="nouveauTriage.poids"
+            class="w-full h-8 px-2.5 border border-gray-300 rounded focus:border-[#0F4C3A] focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">MUAC (mm) *</label>
+          <input type="number" [(ngModel)]="nouveauTriage.muac"
+            class="w-full h-8 px-2.5 border border-gray-300 rounded font-mono font-bold focus:border-[#0F4C3A] focus:outline-none" />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 p-2 rounded bg-red-50 border border-red-200">
+        <input type="checkbox" id="oedemes" [(ngModel)]="nouveauTriage.oedemes"
+          class="rounded text-red-600 focus:ring-red-600 cursor-pointer" />
+        <label for="oedemes" class="text-red-900 font-semibold text-xs cursor-pointer">
+          Présence d'œdèmes bilatéraux aux deux pieds (+)
+        </label>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Nom Tutrice / Mère</label>
+          <input type="text" [(ngModel)]="nouveauTriage.tuteurNom" placeholder="Ex: Awa Diop"
+            class="w-full h-8 px-2.5 border border-gray-300 rounded focus:border-[#0F4C3A] focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-gray-700 font-semibold mb-1">Téléphone</label>
+          <input type="text" [(ngModel)]="nouveauTriage.tuteurTelephone" placeholder="77 XXX XX XX"
+            class="w-full h-8 px-2.5 border border-gray-300 rounded focus:border-[#0F4C3A] focus:outline-none" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Adresse &amp; Quartier</label>
+        <input type="text" [(ngModel)]="nouveauTriage.adresse"
+          class="w-full h-8 px-2.5 border border-gray-300 rounded focus:border-[#0F4C3A] focus:outline-none" />
+      </div>
+    </div>
+
+    <div class="px-5 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
+      <button (click)="fermerModalTriage()"
+        class="px-3 py-1.5 rounded bg-white border border-gray-300 text-gray-700 font-semibold text-xs hover:bg-gray-100 cursor-pointer whitespace-nowrap">
+        Annuler
+      </button>
+      <button (click)="sauvegarderNouveauTriage()"
+        class="px-4 py-1.5 rounded bg-[#0F4C3A] text-white font-bold text-xs hover:bg-emerald-900 cursor-pointer whitespace-nowrap shadow-xs">
+        Enregistrer le Triage
+      </button>
+    </div>
+  </div>
+</div>

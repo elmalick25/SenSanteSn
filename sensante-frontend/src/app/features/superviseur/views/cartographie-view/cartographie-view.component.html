@@ -1,0 +1,650 @@
+<div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#f8f9ff]">
+  <!-- TOP BAR (Component: TopNavBar) -->
+  <header class="h-16 px-4 xl:px-6 bg-white border-b border-slate-200 flex items-center justify-between z-30 shadow-xs flex-shrink-0">
+    <!-- Breadcrumbs & Metric Pill -->
+    <div class="flex items-center gap-3 overflow-hidden">
+      <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium whitespace-nowrap">
+        <span class="font-medium text-[#003426]">District Dakar Ouest</span>
+        <span class="material-symbols-outlined text-sm text-slate-400">chevron_right</span>
+        <span class="font-semibold text-slate-900">Cartographie &amp; Missions</span>
+      </div>
+
+      <div class="h-4 w-px bg-slate-200 mx-1 hidden md:block"></div>
+
+      <!-- Metric Pill Summary -->
+      <div class="hidden xl:flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-200 text-xs whitespace-nowrap">
+        <span class="font-bold text-[#003426]">{{ overview()?.totalMissionsActives || 14 }} Missions Actives:</span>
+        <span class="flex items-center gap-1 text-red-700 font-semibold">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+          {{ overview()?.aIntervenir || 3 }} À intervenir
+        </span>
+        <span class="text-slate-300">•</span>
+        <span class="flex items-center gap-1 text-amber-800 font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          {{ overview()?.enCours || 7 }} En cours
+        </span>
+        <span class="text-slate-300">•</span>
+        <span class="flex items-center gap-1 text-emerald-800 font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          {{ overview()?.rapportsSoumis || 4 }} Rapports soumis
+        </span>
+      </div>
+    </div>
+
+    <!-- Controls & Action CTA -->
+    <div class="flex items-center gap-3 flex-shrink-0">
+      <div class="relative hidden sm:block">
+        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+          <span class="material-symbols-outlined text-base">search</span>
+        </span>
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchChange($event)"
+          placeholder="Filtrer par quartier, code..."
+          class="pl-8 pr-3 py-1.5 text-xs bg-slate-50 rounded-md border border-slate-300 focus:border-[#003426] focus:ring-1 focus:ring-[#003426] w-52 placeholder:text-slate-400"
+        />
+      </div>
+
+      <button
+        (click)="triggerNotificationAlert()"
+        class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors relative"
+        title="Notifications"
+      >
+        <span class="material-symbols-outlined text-xl">notifications</span>
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-600 rounded-full ring-2 ring-white"></span>
+      </button>
+
+      <button
+        (click)="openCreateMissionPanel()"
+        class="bg-[#003426] hover:bg-[#0f4c3a] text-white px-3.5 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs active:scale-[0.98] whitespace-nowrap"
+      >
+        <span class="material-symbols-outlined text-base">add</span>
+        <span>+ Nouvelle Mission</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION -->
+  @if (toastMessage()) {
+    <div class="fixed top-20 right-6 z-50 px-4 py-2.5 bg-emerald-900 text-white text-xs rounded-lg shadow-xl border border-emerald-500/40 flex items-center gap-2 animate-bounce">
+      <span class="material-symbols-outlined text-emerald-300 text-base">check_circle</span>
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+
+  <!-- WORKSPACE: Two-Column Structured Command Layout -->
+  <div class="flex-1 flex overflow-hidden">
+    <!-- LEFT / MAIN AREA: Interactive Map & Live Follow-up Table -->
+    <main class="flex-1 flex flex-col overflow-y-auto p-4 xl:p-6 space-y-6 custom-scrollbar">
+      <!-- SECTION A: GIS INTERACTIVE MAP CONTAINER -->
+      <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
+        <!-- Map Header / GIS Toolbar -->
+        <div class="p-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="p-1 rounded bg-slate-100 text-[#003426] flex items-center">
+              <span class="material-symbols-outlined text-lg">location_searching</span>
+            </span>
+            <span class="font-semibold text-xs text-slate-900 font-['Plus_Jakarta_Sans'] whitespace-nowrap">
+              Surveillance Spatiale des Foyers de Malnutrition (Dakar Ouest)
+            </span>
+          </div>
+
+          <!-- Floating GIS toolbar items -->
+          <div class="flex items-center gap-1.5 text-xs">
+            <button
+              (click)="showToast('Outil polygone activé. Cliquez sur la carte pour délimiter une zone.')"
+              class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined text-sm">polyline</span>
+              <span>Tracer un polygone</span>
+            </button>
+            <button
+              (click)="toggleLayers()"
+              class="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined text-sm">layers</span>
+              <span>Calques: Foyers MAS &amp; Relais</span>
+            </button>
+            <button
+              (click)="centerDakar()"
+              class="flex items-center gap-1 px-2 py-1 rounded bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+              title="Recentrer"
+            >
+              <span class="material-symbols-outlined text-sm">my_location</span>
+              <span>Centrer Dakar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- The Map View Canvas -->
+        <div class="relative h-96 w-full bg-slate-100 overflow-hidden select-none">
+          <!-- Vraie carte interactive Leaflet avec tuiles OpenStreetMap -->
+          <div id="map-superviseur-missions" class="w-full h-full z-0 relative"></div>
+
+          <!-- INTERACTIVE HOVER/FOCUS INFO CARD (Docked top-left inside map) -->
+          <div class="absolute top-4 left-4 max-w-xs bg-white/95 backdrop-blur-md p-3 rounded-lg shadow-lg border border-red-200 text-xs text-slate-800 space-y-1.5 z-10">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 text-red-700 font-bold text-xs whitespace-nowrap">
+                <span class="material-symbols-outlined text-base text-red-600">warning</span>
+                <span>{{ focusedSectorTitle() }}</span>
+              </div>
+              <span class="px-1.5 py-0.5 bg-red-100 text-red-700 font-bold rounded text-[9px] whitespace-nowrap">Alerte MAS</span>
+            </div>
+            <p class="text-slate-600 text-[11px] leading-tight text-pretty">
+              Statut : <span class="font-semibold text-red-700">À intervenir d'urgence</span> • Objectif de dépistage : 50 enfants ciblés.
+            </p>
+            <div class="flex items-center gap-2 pt-1 border-t border-slate-100 text-[10px] whitespace-nowrap">
+              <span class="text-slate-400">Relais recommandé:</span>
+              <span class="font-semibold text-[#003426]">Bajenu Gox Fatou Sow</span>
+            </div>
+          </div>
+
+          <!-- MAP LEGEND (Bottom Right Floating) -->
+          <div class="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-3 py-2 rounded-lg shadow border border-slate-200 flex items-center gap-3 text-xs">
+            <span class="text-xs font-semibold text-slate-500 whitespace-nowrap">Légende :</span>
+            <div class="flex items-center gap-1.5 text-red-800 whitespace-nowrap">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-600 flex-shrink-0"></span>
+              <span>À intervenir ({{ overview()?.aIntervenir || 3 }})</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-amber-800 whitespace-nowrap">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0"></span>
+              <span>En cours ({{ overview()?.enCours || 7 }})</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-emerald-800 whitespace-nowrap">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 flex-shrink-0"></span>
+              <span>Rapport soumis ({{ overview()?.rapportsSoumis || 4 }})</span>
+            </div>
+          </div>
+
+          <!-- Compass Widget -->
+          <div class="absolute top-4 right-4 bg-white/90 p-1.5 rounded-full shadow text-slate-600 flex items-center justify-center">
+            <span class="material-symbols-outlined text-xl text-[#003426]">explore</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION B: TABLEAU DE SUIVI DES MISSIONS ACTIVES -->
+      <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col">
+        <!-- Table Header & Segmented Filter Chips -->
+        <div class="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold font-['Plus_Jakarta_Sans'] text-slate-900 text-balance whitespace-nowrap">
+              Suivi Stratégique des Déploiements
+            </h2>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-[#003426]/10 text-[#003426] font-semibold whitespace-nowrap">
+              {{ missions().length }} au total
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Filter Chips -->
+            <div class="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200 text-xs">
+              <button
+                (click)="filterStatut.set('TOUTES')"
+                [class.bg-white]="filterStatut() === 'TOUTES'"
+                [class.text-[#003426]]="filterStatut() === 'TOUTES'"
+                [class.font-semibold]="filterStatut() === 'TOUTES'"
+                [class.shadow-xs]="filterStatut() === 'TOUTES'"
+                [class.text-slate-600]="filterStatut() !== 'TOUTES'"
+                class="px-2.5 py-1 rounded transition-colors whitespace-nowrap"
+              >
+                Toutes ({{ overview()?.totalMissionsActives || 14 }})
+              </button>
+              <button
+                (click)="filterStatut.set('A_INTERVENIR')"
+                [class.bg-white]="filterStatut() === 'A_INTERVENIR'"
+                [class.text-[#003426]]="filterStatut() === 'A_INTERVENIR'"
+                [class.font-semibold]="filterStatut() === 'A_INTERVENIR'"
+                [class.shadow-xs]="filterStatut() === 'A_INTERVENIR'"
+                [class.text-slate-600]="filterStatut() !== 'A_INTERVENIR'"
+                class="px-2.5 py-1 rounded transition-colors whitespace-nowrap"
+              >
+                À intervenir ({{ overview()?.aIntervenir || 3 }})
+              </button>
+              <button
+                (click)="filterStatut.set('EN_COURS')"
+                [class.bg-white]="filterStatut() === 'EN_COURS'"
+                [class.text-[#003426]]="filterStatut() === 'EN_COURS'"
+                [class.font-semibold]="filterStatut() === 'EN_COURS'"
+                [class.shadow-xs]="filterStatut() === 'EN_COURS'"
+                [class.text-slate-600]="filterStatut() !== 'EN_COURS'"
+                class="px-2.5 py-1 rounded transition-colors whitespace-nowrap"
+              >
+                En cours ({{ overview()?.enCours || 7 }})
+              </button>
+              <button
+                (click)="filterStatut.set('RAPPORT_SOUMIS')"
+                [class.bg-white]="filterStatut() === 'RAPPORT_SOUMIS'"
+                [class.text-[#003426]]="filterStatut() === 'RAPPORT_SOUMIS'"
+                [class.font-semibold]="filterStatut() === 'RAPPORT_SOUMIS'"
+                [class.shadow-xs]="filterStatut() === 'RAPPORT_SOUMIS'"
+                [class.text-slate-600]="filterStatut() !== 'RAPPORT_SOUMIS'"
+                class="px-2.5 py-1 rounded transition-colors whitespace-nowrap"
+              >
+                Rapports soumis ({{ overview()?.rapportsSoumis || 4 }})
+              </button>
+            </div>
+
+            <!-- Export DHIS2 Button -->
+            <button
+              (click)="exportDhis2()"
+              class="flex items-center gap-1 text-xs px-2.5 py-1 rounded border border-slate-300 hover:bg-slate-50 transition-colors text-slate-700 whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined text-sm">file_download</span>
+              <span>Exporter</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- High-Density Clinical Operations Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold">
+                <th class="py-2.5 px-3 whitespace-nowrap">Code Mission</th>
+                <th class="py-2.5 px-3 whitespace-nowrap">Zone Ciblée</th>
+                <th class="py-2.5 px-3 whitespace-nowrap">Agent / Bajenu Gox</th>
+                <th class="py-2.5 px-3 whitespace-nowrap">Objectif Chiffré</th>
+                <th class="py-2.5 px-3 whitespace-nowrap">Progression</th>
+                <th class="py-2.5 px-3 whitespace-nowrap">Échéance</th>
+                <th class="py-2.5 px-3 whitespace-nowrap">Priorité</th>
+                <th class="py-2.5 px-3 whitespace-nowrap">Statut</th>
+                <th class="py-2.5 px-3 text-right whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-xs">
+              @if (isLoading()) {
+                @for (item of [1, 2, 3, 4]; track item) {
+                  <tr class="animate-pulse">
+                    <td class="py-3 px-3"><div class="h-4 bg-slate-200 rounded w-16"></div></td>
+                    <td class="py-3 px-3"><div class="h-4 bg-slate-200 rounded w-28"></div></td>
+                    <td class="py-3 px-3"><div class="h-4 bg-slate-200 rounded w-24"></div></td>
+                    <td class="py-3 px-3"><div class="h-4 bg-slate-200 rounded w-36"></div></td>
+                    <td class="py-3 px-3"><div class="h-4 bg-slate-200 rounded w-20"></div></td>
+                    <td class="py-3 px-3"><div class="h-4 bg-slate-200 rounded w-20"></div></td>
+                    <td class="py-3 px-3"><div class="h-4 bg-slate-200 rounded w-16"></div></td>
+                    <td class="py-3 px-3"><div class="h-4 bg-slate-200 rounded w-16"></div></td>
+                    <td class="py-3 px-3 text-right"><div class="h-6 bg-slate-200 rounded w-16 ml-auto"></div></td>
+                  </tr>
+                }
+              } @else if (filteredMissions().length === 0) {
+                <tr>
+                  <td colspan="9" class="py-8 text-center text-slate-500">
+                    <span class="material-symbols-outlined text-3xl text-slate-400 block mb-1">inbox</span>
+                    <span>Aucune mission trouvée pour ces critères de filtrage.</span>
+                  </td>
+                </tr>
+              } @else {
+                @for (mission of filteredMissions(); track mission.id) {
+                  <tr
+                    class="hover:bg-slate-50 transition-colors"
+                    [class.border-l-4]="mission.statut === 'A_INTERVENIR'"
+                    [class.border-l-red-600]="mission.statut === 'A_INTERVENIR'"
+                    [class.bg-red-50]="mission.statut === 'A_INTERVENIR'"
+                  >
+                    <!-- Code Mission -->
+                    <td
+                      class="py-3 px-3 font-mono font-bold whitespace-nowrap"
+                      [class.text-red-700]="mission.statut === 'A_INTERVENIR'"
+                      [class.text-emerald-800]="mission.statut === 'RAPPORT_SOUMIS'"
+                      [class.text-slate-800]="mission.statut === 'EN_COURS'"
+                    >
+                      {{ mission.codeMission }}
+                    </td>
+
+                    <!-- Zone Ciblée -->
+                    <td class="py-3 px-3 font-medium text-slate-900 whitespace-nowrap">
+                      {{ mission.zoneCiblee }}
+                      <span class="block text-[10px] text-slate-400">{{ mission.posteSante }}</span>
+                    </td>
+
+                    <!-- Agent / Bajenu Gox -->
+                    <td class="py-3 px-3 whitespace-nowrap">
+                      <div class="flex items-center gap-2">
+                        <div
+                          class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0"
+                          [class.bg-[#003426]]="mission.statut === 'A_INTERVENIR'"
+                          [class.text-white]="mission.statut === 'A_INTERVENIR'"
+                          [class.bg-slate-200]="mission.statut === 'EN_COURS'"
+                          [class.text-slate-800]="mission.statut === 'EN_COURS'"
+                          [class.bg-[#85f8c4]]="mission.statut === 'RAPPORT_SOUMIS'"
+                          [class.text-[#003426]]="mission.statut === 'RAPPORT_SOUMIS'"
+                        >
+                          {{ mission.agentInitiale }}
+                        </div>
+                        <div>
+                          <div class="font-medium leading-none text-slate-800">{{ mission.agentNom }}</div>
+                          <span
+                            class="text-[10px] font-semibold"
+                            [class.text-emerald-700]="mission.agentStatut === 'Disponible'"
+                            [class.text-blue-700]="mission.agentStatut === 'Sur site'"
+                            [class.text-slate-400]="mission.agentStatut !== 'Disponible' && mission.agentStatut !== 'Sur site'"
+                          >
+                            {{ mission.agentStatut }}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Objectif Chiffré -->
+                    <td class="py-3 px-3 text-slate-600 max-w-xs truncate text-pretty">
+                      {{ mission.objectifChiffre }}
+                    </td>
+
+                    <!-- Progression -->
+                    <td class="py-3 px-3 whitespace-nowrap">
+                      <div class="w-28 space-y-1">
+                        <div
+                          class="flex justify-between text-[11px] font-semibold"
+                          [class.text-slate-400]="mission.progression === 0"
+                          [class.text-amber-800]="mission.progression > 0 && mission.progression < 100"
+                          [class.text-emerald-800]="mission.progression === 100"
+                        >
+                          <span>{{ mission.progression }}%</span>
+                          <span>{{ mission.cibleAtteinte }}/{{ mission.cibleTotale }}</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            class="h-full rounded-full transition-all duration-300"
+                            [style.width.%]="mission.progression"
+                            [class.bg-red-600]="mission.statut === 'A_INTERVENIR'"
+                            [class.bg-amber-500]="mission.statut === 'EN_COURS'"
+                            [class.bg-emerald-600]="mission.statut === 'RAPPORT_SOUMIS' || mission.statut === 'VALIDE'"
+                          ></div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Échéance -->
+                    <td
+                      class="py-3 px-3 whitespace-nowrap font-medium"
+                      [class.text-red-700]="mission.statut === 'A_INTERVENIR'"
+                      [class.font-semibold]="mission.statut === 'A_INTERVENIR'"
+                      [class.text-slate-700]="mission.statut === 'EN_COURS'"
+                      [class.text-slate-400]="mission.statut === 'RAPPORT_SOUMIS'"
+                    >
+                      {{ mission.echeanceLibelle }}
+                    </td>
+
+                    <!-- Priorité -->
+                    <td class="py-3 px-3 whitespace-nowrap">
+                      @if (mission.priorite === 'URGENCE_VITALE') {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-200 whitespace-nowrap flex-shrink-0">
+                          <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                          Urgence Vitale
+                        </span>
+                      } @else if (mission.priorite === 'HAUTE') {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap flex-shrink-0">
+                          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          Haute
+                        </span>
+                      } @else {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap flex-shrink-0">
+                          Normale
+                        </span>
+                      }
+                    </td>
+
+                    <!-- Statut -->
+                    <td class="py-3 px-3 whitespace-nowrap">
+                      @if (mission.statut === 'A_INTERVENIR') {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-300 whitespace-nowrap flex-shrink-0">
+                          À intervenir
+                        </span>
+                      } @else if (mission.statut === 'EN_COURS') {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 whitespace-nowrap flex-shrink-0">
+                          En cours
+                        </span>
+                      } @else if (mission.statut === 'RAPPORT_SOUMIS') {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 whitespace-nowrap flex-shrink-0">
+                          Rapport soumis
+                        </span>
+                      } @else {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-300 whitespace-nowrap flex-shrink-0">
+                          Validée
+                        </span>
+                      }
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-3 px-3 text-right whitespace-nowrap">
+                      @if (mission.statut === 'A_INTERVENIR') {
+                        <button
+                          (click)="deployerMission(mission.id)"
+                          class="bg-[#003426] hover:bg-[#0f4c3a] text-white px-2.5 py-1 rounded text-xs font-semibold transition-colors shadow-xs active:scale-95 whitespace-nowrap"
+                        >
+                          Déployer
+                        </button>
+                      } @else if (mission.statut === 'EN_COURS') {
+                        <button
+                          (click)="actionGps(mission)"
+                          class="border border-slate-300 hover:bg-slate-100 text-slate-700 px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap"
+                        >
+                          Suivi GPS
+                        </button>
+                      } @else if (mission.statut === 'RAPPORT_SOUMIS') {
+                        <button
+                          (click)="validerRapport(mission.id)"
+                          class="bg-[#85f8c4] hover:bg-[#68dba9] text-[#003426] font-bold px-2.5 py-1 rounded text-xs transition-colors whitespace-nowrap"
+                        >
+                          Valider Rapport
+                        </button>
+                      } @else {
+                        <span class="text-xs text-slate-400 font-medium">Clôturée</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT / SLIDE-OUT PANEL: "Nouvelle Mission" Creation Drawer -->
+    @if (isCreatePanelOpen()) {
+      <aside class="w-96 bg-white border-l border-slate-200 shadow-xl flex flex-col z-40 transition-all duration-300 flex-shrink-0">
+        <!-- Panel Header -->
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/60 flex-shrink-0">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="p-1 rounded bg-[#003426] text-[#85f8c4] flex items-center">
+                <span class="material-symbols-outlined text-base">assignment_add</span>
+              </span>
+              <h3 class="font-bold text-sm text-[#003426] font-['Plus_Jakarta_Sans'] whitespace-nowrap">
+                Créer une Mission Terrain
+              </h3>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5 text-pretty">Affectation directe aux relais et Bajenu Gox du district</p>
+          </div>
+          <button
+            (click)="isCreatePanelOpen.set(false)"
+            class="p-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+          >
+            <span class="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+
+        <!-- Panel Form Body -->
+        <form class="flex-1 overflow-y-auto p-4 space-y-4 text-xs custom-scrollbar" (ngSubmit)="submitCreateMission()">
+          <!-- Form Field 1: Sélection de la Zone -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="font-semibold text-slate-800 whitespace-nowrap">1. Sélection de la Zone</label>
+              <button
+                (click)="showToast('Mode tracé sur carte activé')"
+                type="button"
+                class="text-[#003426] text-[11px] font-semibold hover:underline flex items-center gap-0.5 whitespace-nowrap"
+              >
+                <span class="material-symbols-outlined text-xs">draw</span>
+                <span>Tracer sur la carte</span>
+              </button>
+            </div>
+            <select
+              [(ngModel)]="newMission.zoneCiblee"
+              name="zoneCiblee"
+              class="w-full text-xs rounded-md border-slate-300 focus:border-[#003426] focus:ring-[#003426] bg-white"
+            >
+              <option value="Zone Médina Secteur 3 (Prioritaire • Foyer MAS)">Zone Médina Secteur 3 (Prioritaire • Foyer MAS)</option>
+              <option value="Zone Gueule Tapée Ouest (Mission Active)">Zone Gueule Tapée Ouest (Mission Active)</option>
+              <option value="Zone Ouakam Village (Secteur 2)">Zone Ouakam Village (Secteur 2)</option>
+              <option value="Zone Fann Point-E">Zone Fann Point-E</option>
+              <option value="Zone Mermoz / Sacré-Cœur">Zone Mermoz / Sacré-Cœur</option>
+            </select>
+          </div>
+
+          <!-- Form Field 2: Assignation Agent / Bajenu Gox -->
+          <div>
+            <label class="block font-semibold text-slate-800 mb-1 whitespace-nowrap">2. Assignation Agent ou Bajenu Gox</label>
+            <select
+              [(ngModel)]="newMission.agentNom"
+              name="agentNom"
+              class="w-full text-xs rounded-md border-slate-300 focus:border-[#003426] focus:ring-[#003426] bg-white"
+            >
+              <option value="Bajenu Gox Fatou Sow (Secteur Médina • Disponible)">Bajenu Gox Fatou Sow (Secteur Médina • Disponible)</option>
+              <option value="Relais Mamadou Kane (Gueule Tapée • Disponible)">Relais Mamadou Kane (Gueule Tapée • Disponible)</option>
+              <option value="Équipe Mobile 2 (Véhicule Tout-Terrain Dakar)">Équipe Mobile 2 (Véhicule Tout-Terrain Dakar)</option>
+              <option value="Bajenu Gox Aïda Ndiaye (Ouakam Village)">Bajenu Gox Aïda Ndiaye (Ouakam Village)</option>
+            </select>
+            <p class="text-[11px] text-emerald-800 mt-1 flex items-center gap-1 whitespace-nowrap">
+              <span class="material-symbols-outlined text-xs text-emerald-600">verified</span>
+              <span>Agent géolocalisé à moins de 800m de la zone cible</span>
+            </p>
+          </div>
+
+          <!-- Form Field 3: Objectif chiffré -->
+          <div>
+            <label class="block font-semibold text-slate-800 mb-1 whitespace-nowrap">3. Objectif Chiffré &amp; Tâches</label>
+            <textarea
+              [(ngModel)]="newMission.objectifChiffre"
+              name="objectifChiffre"
+              rows="2"
+              placeholder="ex: Dépistage de 50 enfants 6-59 mois &amp; test d'appétit systématique aux œdèmes bilatéraux..."
+              class="w-full text-xs rounded-md border-slate-300 focus:border-[#003426] focus:ring-[#003426] bg-white placeholder:text-slate-400"
+            ></textarea>
+          </div>
+
+          <!-- Form Field 4: Date limite / Heure d'échéance -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-800 mb-1 whitespace-nowrap">4. Date Limite</label>
+              <input
+                type="date"
+                [(ngModel)]="newMission.dateLimite"
+                name="dateLimite"
+                class="w-full text-xs rounded-md border-slate-300 focus:border-[#003426] focus:ring-[#003426] bg-white"
+              />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-800 mb-1 whitespace-nowrap">Heure Échéance</label>
+              <input
+                type="time"
+                [(ngModel)]="newMission.heureEcheance"
+                name="heureEcheance"
+                class="w-full text-xs rounded-md border-slate-300 focus:border-[#003426] focus:ring-[#003426] bg-white"
+              />
+            </div>
+          </div>
+
+          <!-- Form Field 5: Niveau de Priorité -->
+          <div>
+            <label class="block font-semibold text-slate-800 mb-1.5 whitespace-nowrap">5. Niveau de Priorité Stratégique</label>
+            <div class="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200 text-center text-xs">
+              <button
+                type="button"
+                (click)="newMission.priorite = 'NORMALE'"
+                [class.bg-white]="newMission.priorite === 'NORMALE'"
+                [class.shadow-xs]="newMission.priorite === 'NORMALE'"
+                [class.font-bold]="newMission.priorite === 'NORMALE'"
+                class="py-1.5 rounded transition-colors text-slate-700 whitespace-nowrap"
+              >
+                Normale
+              </button>
+              <button
+                type="button"
+                (click)="newMission.priorite = 'HAUTE'"
+                [class.bg-white]="newMission.priorite === 'HAUTE'"
+                [class.shadow-xs]="newMission.priorite === 'HAUTE'"
+                [class.font-bold]="newMission.priorite === 'HAUTE'"
+                class="py-1.5 rounded transition-colors text-slate-700 whitespace-nowrap"
+              >
+                Haute
+              </button>
+              <button
+                type="button"
+                (click)="newMission.priorite = 'URGENCE_VITALE'"
+                [class.bg-red-600]="newMission.priorite === 'URGENCE_VITALE'"
+                [class.text-white]="newMission.priorite === 'URGENCE_VITALE'"
+                [class.font-bold]="newMission.priorite === 'URGENCE_VITALE'"
+                [class.shadow-xs]="newMission.priorite === 'URGENCE_VITALE'"
+                class="py-1.5 rounded transition-colors whitespace-nowrap"
+              >
+                Urgence Vitale
+              </button>
+            </div>
+          </div>
+
+          <!-- Form Field 6: Dotation d'intrants requise -->
+          <div>
+            <label class="block font-semibold text-slate-800 mb-1.5 whitespace-nowrap">6. Dotation d'intrants Médicaux Requis</label>
+            <div class="space-y-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="newMission.dotationMuac"
+                  name="dotationMuac"
+                  class="rounded text-[#003426] focus:ring-[#003426] border-slate-300 w-4 h-4"
+                />
+                <span class="text-slate-700 whitespace-nowrap">Rubans MUAC / Périmètre Brachial (x5)</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="newMission.dotationAtpe"
+                  name="dotationAtpe"
+                  class="rounded text-[#003426] focus:ring-[#003426] border-slate-300 w-4 h-4"
+                />
+                <span class="text-slate-700 whitespace-nowrap">Cartons ATPE Plumpy'Nut (x8)</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="newMission.dotationRegistres"
+                  name="dotationRegistres"
+                  class="rounded text-[#003426] focus:ring-[#003426] border-slate-300 w-4 h-4"
+                />
+                <span class="text-slate-700 whitespace-nowrap">Fiches de triage &amp; Registre CRENAS (x50)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="pt-2 space-y-2">
+            <button
+              type="submit"
+              [disabled]="isSubmitting()"
+              class="w-full py-2.5 bg-[#003426] hover:bg-[#0f4c3a] text-white font-semibold rounded-md flex items-center justify-center gap-2 shadow transition-all active:scale-[0.98] whitespace-nowrap disabled:opacity-50"
+            >
+              @if (isSubmitting()) {
+                <span class="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span>Déploiement en cours...</span>
+              } @else {
+                <span class="material-symbols-outlined text-base">send</span>
+                <span>Déployer la Mission Immédiatement</span>
+              }
+            </button>
+            <button
+              type="button"
+              (click)="saveDraft()"
+              class="w-full py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold rounded-md transition-colors whitespace-nowrap"
+            >
+              Enregistrer Brouillon
+            </button>
+          </div>
+        </form>
+      </aside>
+    }
+  </div>
+</div>

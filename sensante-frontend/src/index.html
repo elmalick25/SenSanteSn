@@ -1,17 +1,141 @@
 <!doctype html>
 <html lang="fr">
+
 <head>
   <meta charset="utf-8">
   <title>SenSantéSn - Plateforme de Suivi Médical et Nutritionnel</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none'%3E%3Crect width='60' height='60' rx='16' fill='%23064e3b'/%3E%3Cpath d='M30 14V46M14 30H46' stroke='%235eead4' stroke-width='4.5' stroke-linecap='round'/%3E%3Cpath d='M30 20C26 15 19 18 19 25C19 33 30 40 30 40C30 40 41 33 41 25C41 18 34 15 30 20Z' fill='%23ffffff'/%3E%3Cpath d='M22 26H26L28 22L32 30L34 26H38' stroke='%230d9488' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none'%3E%3Crect width='60' height='60' rx='16' fill='%23064e3b'/%3E%3Cpath d='M30 14V46M14 30H46' stroke='%235eead4' stroke-width='4.5' stroke-linecap='round'/%3E%3Cpath d='M30 20C26 15 19 18 19 25C19 33 30 40 30 40C30 40 41 33 41 25C41 18 34 15 30 20Z' fill='%23ffffff'/%3E%3Cpath d='M22 26H26L28 22L32 30L34 26H38' stroke='%230d9488' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-low": "#f8fafc",
+            "surface-dim": "#e2e8f0",
+            "on-primary": "#ffffff",
+            "surface-container-highest": "#cbd5e1",
+            "inverse-on-surface": "#f8fafc",
+            "surface-bright": "#ffffff",
+            "background": "#f8fafc",
+            "tertiary-container": "#0f766e",
+            "error-container": "#fee2e2",
+            "tertiary-fixed": "#99f6e4",
+            "surface-container": "#f1f5f9",
+            "on-tertiary-container": "#ccfbf1",
+            "on-secondary": "#ffffff",
+            "on-error-container": "#991b1b",
+            "on-secondary-fixed-variant": "#115e59",
+            "on-surface": "#0f172a",
+            "primary": "#065f46",
+            "outline": "#94a3b8",
+            "tertiary-fixed-dim": "#5eead4",
+            "on-tertiary": "#ffffff",
+            "primary-fixed": "#d1fae5",
+            "inverse-surface": "#1e293b",
+            "secondary-container": "#ccfbf1",
+            "outline-variant": "#e2e8f0",
+            "tertiary": "#2dd4bf",
+            "surface-variant": "#f1f5f9",
+            "on-secondary-container": "#134e4a",
+            "secondary-fixed": "#99f6e4",
+            "surface-container-high": "#e2e8f0",
+            "on-tertiary-fixed": "#042f2e",
+            "surface": "#ffffff",
+            "on-tertiary-fixed-variant": "#115e59",
+            "on-surface-variant": "#475569",
+            "on-primary-fixed-variant": "#065f46",
+            "secondary": "#065f46",
+            "on-primary-fixed": "#022c22",
+            "surface-container-lowest": "#ffffff",
+            "error": "#dc2626",
+            "primary-container": "#065f46",
+            "inverse-primary": "#a7f3d0",
+            "on-background": "#0f172a",
+            "on-error": "#ffffff",
+            "primary-fixed-dim": "#6ee7b7",
+            "secondary-fixed-dim": "#5eead4",
+            "on-primary-container": "#ffffff",
+            "surface-tint": "#065f46",
+            "on-secondary-fixed": "#042f2e",
+            "sensante-deep": "#065f46",
+            "sensante-dark": "#065f46",
+            "sensante-cta": "#065f46",
+            "sensante-cta-hover": "#044e3f",
+            "sensante-mint": "#2dd4bf",
+            "sensante-mint-light": "#e6fffa",
+            "sensante-pastel": "#d1fae5",
+            "sn-green": "#00853F",
+            "sn-yellow": "#FDEF42",
+            "sn-red": "#E31B23",
+            emerald: {
+              50: "#f0fdf4",
+              100: "#dcfce7",
+              200: "#bbf7d0",
+              300: "#86efac",
+              400: "#4ade80",
+              500: "#22c55e",
+              600: "#16a34a",
+              700: "#065f46",
+              800: "#065f46",
+              900: "#044e3f",
+              950: "#022c22"
+            }
+          },
+          fontFamily: {
+            "sans": ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            "body": ["Inter", "sans-serif"],
+            "display": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "display-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "label-lg": ["Plus Jakarta Sans", "sans-serif"]
+          },
+          fontSize: {
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-sm": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-md": ["22px", { "lineHeight": "30px", "fontWeight": "600" }],
+            "label-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-lg": ["16px", { "lineHeight": "20px", "fontWeight": "600" }]
+          },
+          boxShadow: {
+            "subtle": "0 2px 10px rgba(11, 83, 65, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02)",
+            "card": "0 10px 30px -5px rgba(11, 83, 65, 0.10), 0 1px 4px rgba(0,0,0,0.03)",
+            "modal": "0 24px 60px -12px rgba(9, 75, 59, 0.3)"
+          }
+        }
+      }
+    };
+  </script>
 </head>
+
 <body>
   <app-root></app-root>
 </body>
+
 </html>

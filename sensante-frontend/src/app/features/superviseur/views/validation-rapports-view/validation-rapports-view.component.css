@@ -1,0 +1,50 @@
+:host {
+  display: block;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+@keyframes bounceShort {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-short {
+  animation: bounceShort 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Custom discreet scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cfd8dc;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #90a4ae;
+}

@@ -63,8 +63,23 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        // Swagger & OpenAPI
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // WebSockets & SSE
+                        .requestMatchers("/ws/**", "/api/stream/**").permitAll()
+                        // Route /mes-enfants : accessible par tout utilisateur authentifié (filtre par JWT côté contrôleur)
+                        .requestMatchers(HttpMethod.GET, "/api/enfants/mes-enfants").authenticated()
+                        // Route admin sans filtre : ADMINISTRATEUR uniquement
+                        .requestMatchers(HttpMethod.GET, "/api/enfants").hasRole("ADMINISTRATEUR")
                         .requestMatchers("/api/admin/**").hasRole("ADMINISTRATEUR")
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Session expirée ou non autorisée.\"}");
+                        })
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

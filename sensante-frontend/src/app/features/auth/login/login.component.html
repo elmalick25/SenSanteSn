@@ -1,39 +1,54 @@
 <div class="split-auth-container">
-  <div class="auth-visual-panel">
+  
+  <!-- ================= 1. DESKTOP LEFT VISUAL PANEL (Grand écran > 900px) ================= -->
+  <aside class="auth-visual-panel" aria-hidden="true">
     <div class="visual-overlay"></div>
     <div class="visual-content">
       <div class="top-badge">
-        <span class="flag-dot">🇸🇳</span>
+        <svg class="senegal-flag-svg" viewBox="0 0 36 24" width="20" height="13.3" aria-label="Drapeau du Sénégal">
+          <clipPath id="snFlagTopDesk">
+            <rect width="36" height="24" rx="2" />
+          </clipPath>
+          <g clip-path="url(#snFlagTopDesk)">
+            <rect x="0" y="0" width="12" height="24" fill="#00853F" />
+            <rect x="12" y="0" width="12" height="24" fill="#FDEF42" />
+            <rect x="24" y="0" width="12" height="24" fill="#E31B23" />
+            <polygon
+              points="18,7.2 19.35,11.3 23.5,11.3 20.15,13.7 21.4,17.8 18,15.3 14.6,17.8 15.85,13.7 12.5,11.3 16.65,11.3"
+              fill="#00853F" />
+          </g>
+        </svg>
         <span>République du Sénégal</span>
       </div>
 
       <div class="hero-logo-wrapper">
-        <svg class="hero-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="60" height="60" rx="16" fill="url(#heroLogoGrad)" />
+        <svg class="hero-logo-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="heroLogoGrad" x1="0%" y1="0%" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+            <linearGradient id="heroLogoGrad" x1="0%" y1="0%" x2="64" y2="64" gradientUnits="userSpaceOnUse">
               <stop stop-color="#0f766e" />
               <stop offset="100%" stop-color="#044e3f" />
             </linearGradient>
-            <filter id="heroGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
+            <filter id="heroEcgGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
           </defs>
-          <path d="M30 13V47M13 30H47" stroke="#5eead4" stroke-width="4.8" stroke-linecap="round" />
-          <path d="M30 19C26 14 18 17 18 25C18 33.5 30 41 30 41C30 41 42 33.5 42 25C42 17 34 14 30 19Z" fill="#ffffff"
-            opacity="0.98" />
-          <path d="M21 26H25.5L28 21.5L32 30.5L34.5 26H39" stroke="#0d9488" stroke-width="2.6" stroke-linecap="round"
-            stroke-linejoin="round" />
+          <rect width="64" height="64" rx="20" fill="url(#heroLogoGrad)" />
+          <path d="M32 14V50M14 32H50" stroke="#5eead4" stroke-width="4.5" stroke-linecap="round" opacity="0.4" />
+          <path d="M32 20C27.5 14.5 19 17.8 19 26.2C19 35.5 32 44 32 44C32 44 45 35.5 45 26.2C45 17.8 36.5 14.5 32 20Z"
+                fill="#ffffff" opacity="0.96" />
+          <path class="animated-ecg" d="M22 27H26L28.5 22L32.5 32L35 27H42"
+                stroke="#0d9488" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#heroEcgGlow)" />
         </svg>
 
         <div class="hero-brand-name">
-          <h2>Sen<span>Santé</span>
-            <svg class="senegal-flag" viewBox="0 0 36 24" width="24" height="16" aria-label="Drapeau du Sénégal">
-              <clipPath id="snFlagClip">
+          <h2>
+            Sen<span>Santé</span><span class="sn-badge">SN</span>
+            <svg class="senegal-flag-svg inline-flag" viewBox="0 0 36 24" width="24" height="16" aria-label="Drapeau du Sénégal">
+              <clipPath id="snFlagDeskBrand">
                 <rect width="36" height="24" rx="2.5" />
               </clipPath>
-              <g clip-path="url(#snFlagClip)">
+              <g clip-path="url(#snFlagDeskBrand)">
                 <rect x="0" y="0" width="12" height="24" fill="#00853F" />
                 <rect x="12" y="0" width="12" height="24" fill="#FDEF42" />
                 <rect x="24" y="0" width="12" height="24" fill="#E31B23" />
@@ -48,92 +63,175 @@
 
       <div class="visual-text-block">
         <h3>Sunu Santé, Sunu Yitté</h3>
-        <p>Plateforme de surveillance nutritionnelle infantile et continuité des soins au Sénégal.</p>
+        <p>Plateforme nationale de surveillance nutritionnelle infantile, suivi pédiatrique et continuité des soins au Sénégal.</p>
       </div>
 
       <div class="visual-stats-row">
         <div class="stat-pill">
           <i class="fa-solid fa-hospital-user"></i>
-          <span>Centres & Postes</span>
+          <span>Centres & Postes de Santé</span>
         </div>
         <div class="stat-pill">
           <i class="fa-solid fa-heart-circle-check"></i>
-          <span>Dépistage MAS / MAM</span>
+          <span>Dépistage & Prise en charge MAS / MAM</span>
         </div>
       </div>
     </div>
-  </div>
+  </aside>
 
-  <div class="auth-form-panel">
-    <div class="form-wrapper">
-      <div class="ios-drag-handle" aria-hidden="true"></div>
-      <div class="form-header">
-        <div class="brand-logo-container">
-          <svg class="brand-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="60" height="60" rx="16" fill="url(#logoGrad)" />
+  <!-- ================= 2. AUTH FORM PANEL (Desktop & Mobile) ================= -->
+  <main class="auth-form-panel">
+    
+    <!-- MOBILE-ONLY TOP HERO (Visible uniquement sur mobile / Ctrl+Shift+I) -->
+    <div class="mobile-only-header">
+      <div class="mobile-top-bar">
+        <div class="mobile-national-pill">
+          <svg class="senegal-flag-svg" viewBox="0 0 36 24" width="18" height="12" aria-label="Drapeau du Sénégal">
+            <clipPath id="snFlagMobClip">
+              <rect width="36" height="24" rx="2" />
+            </clipPath>
+            <g clip-path="url(#snFlagMobClip)">
+              <rect x="0" y="0" width="12" height="24" fill="#00853F" />
+              <rect x="12" y="0" width="12" height="24" fill="#FDEF42" />
+              <rect x="24" y="0" width="12" height="24" fill="#E31B23" />
+              <polygon
+                points="18,7.2 19.35,11.3 23.5,11.3 20.15,13.7 21.4,17.8 18,15.3 14.6,17.8 15.85,13.7 12.5,11.3 16.65,11.3"
+                fill="#00853F" />
+            </g>
+          </svg>
+          <span>République du Sénégal</span>
+        </div>
+        <div class="mobile-status-pill">
+          <span class="status-dot"></span>
+          <span>Serveur Actif</span>
+        </div>
+      </div>
+
+      <div class="mobile-hero-brand">
+        <div class="mobile-logo-shield">
+          <div class="shield-halo"></div>
+          <svg class="brand-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+              <linearGradient id="mobLogoGrad" x1="0%" y1="0%" x2="60" y2="60" gradientUnits="userSpaceOnUse">
                 <stop stop-color="#0d9488" />
-                <stop offset="1" stop-color="#064e3b" />
+                <stop offset="100%" stop-color="#044e3f" />
               </linearGradient>
             </defs>
-            <path d="M30 14V46M14 30H46" stroke="#5eead4" stroke-width="4" stroke-linecap="round" />
-            <path d="M30 20C26 15 19 18 19 25C19 33 30 40 30 40C30 40 41 33 41 25C41 18 34 15 30 20Z" fill="#ffffff"
-              opacity="0.95" />
-            <path d="M22 26H26L28 22L32 30L34 26H38" stroke="#0d9488" stroke-width="2.2" stroke-linecap="round"
-              stroke-linejoin="round" />
+            <rect width="60" height="60" rx="18" fill="url(#mobLogoGrad)" />
+            <path d="M30 13V47M13 30H47" stroke="#5eead4" stroke-width="4.2" stroke-linecap="round" opacity="0.4" />
+            <path d="M30 19C25.5 13.8 17.5 17 17.5 25C17.5 34 30 42 30 42C30 42 42.5 34 42.5 25C42.5 17 34.5 13.8 30 19Z"
+                  fill="#ffffff" opacity="0.96" />
+            <path class="animated-ecg" d="M20 26H24.5L27 21.5L31 31L33.5 26H40"
+                  stroke="#0d9488" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-
-          <div class="brand-text">
-            <h1 class="brand-title">Sen<span>Santé</span><span class="sn-badge">SN</span></h1>
-          </div>
         </div>
-        <p class="form-subtitle">Connectez-vous à votre espace médical</p>
+
+        <h1 class="mobile-brand-title">
+          Sen<span>Santé</span><span class="sn-tag">SN</span>
+          <svg class="senegal-flag-svg inline-flag" viewBox="0 0 36 24" width="24" height="16" aria-label="Drapeau du Sénégal">
+            <clipPath id="snFlagMobBrand">
+              <rect width="36" height="24" rx="2.5" />
+            </clipPath>
+            <g clip-path="url(#snFlagMobBrand)">
+              <rect x="0" y="0" width="12" height="24" fill="#00853F" />
+              <rect x="12" y="0" width="12" height="24" fill="#FDEF42" />
+              <rect x="24" y="0" width="12" height="24" fill="#E31B23" />
+              <polygon
+                points="18,7.2 19.35,11.3 23.5,11.3 20.15,13.7 21.4,17.8 18,15.3 14.6,17.8 15.85,13.7 12.5,11.3 16.65,11.3"
+                fill="#00853F" />
+            </g>
+          </svg>
+        </h1>
+        <p class="mobile-brand-motto">SUNU SANTÉ, SUNU YITTÉ</p>
+        <p class="mobile-brand-sub">Plateforme Nationale de Suivi Pédiatrique & Nutritionnel</p>
+      </div>
+    </div>
+
+    <!-- MAIN FORM WRAPPER (Card on Mobile, Clean Panel on Desktop) -->
+    <div class="form-wrapper-card">
+      
+      <!-- Desktop Header (Caché sur mobile) -->
+      <div class="desktop-header">
+        <div class="brand-logo-inline">
+          <svg class="brand-icon-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="desktopLogoGrad" x1="0%" y1="0%" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#0d9488" />
+                <stop offset="100%" stop-color="#044e3f" />
+              </linearGradient>
+            </defs>
+            <rect width="60" height="60" rx="16" fill="url(#desktopLogoGrad)" />
+            <path d="M30 14V46M14 30H46" stroke="#5eead4" stroke-width="4" stroke-linecap="round" />
+            <path d="M30 20C26 15 19 18 19 25C19 33 30 40 30 40C30 40 41 33 41 25C41 18 34 15 30 20Z" fill="#ffffff" opacity="0.95" />
+            <path d="M22 26H26L28 22L32 30L34 26H38" stroke="#0d9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="desktop-brand-title">Sen<span>Santé</span><span class="sn-badge">SN</span></span>
+        </div>
+        <h2 class="form-heading">Connexion à votre espace</h2>
+        <p class="form-subheading">Saisissez vos identifiants pour accéder à la plateforme</p>
       </div>
 
-      @if (infoMessage()) {
-      <div class="alert alert-info">
-        <i class="fa-solid fa-circle-info"></i>
-        <span>{{ infoMessage() }}</span>
+      <!-- Mobile Header (Titre interne à la carte blanche) -->
+      <div class="mobile-card-header">
+        <h2 class="card-title">Connexion à votre espace</h2>
+        <p class="card-subtitle">Saisissez vos identifiants pour continuer</p>
       </div>
+
+      <!-- Feedback Alerts -->
+      @if (infoMessage()) {
+        <div class="alert-box alert-info" role="status">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>{{ infoMessage() }}</span>
+        </div>
       }
+
 
       @if (errorMessage()) {
-      <div class="alert alert-danger">
-        <i class="fa-solid fa-circle-exclamation"></i>
-        <span>{{ errorMessage() }}</span>
-      </div>
+        <div class="alert-box alert-danger" role="alert">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>{{ errorMessage() }}</span>
+        </div>
       }
 
+      <!-- Form Inputs -->
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form" novalidate>
+        
+        <!-- Email -->
         <div class="form-group">
           <label for="email">Adresse Email</label>
-          <div class="input-with-icon">
-            <i class="fa-solid fa-envelope icon"></i>
-            <input id="email" type="email" formControlName="email" placeholder="exemple@sensante.sn"
-              [class.is-invalid]="email?.invalid && email?.touched" />
+          <div class="input-with-icon" [class.is-invalid]="email?.invalid && email?.touched">
+            <i class="fa-solid fa-envelope icon" aria-hidden="true"></i>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="exemple@sensante.sn"
+              autocomplete="email"
+              inputmode="email"
+            />
           </div>
           @if (email?.invalid && email?.touched) {
-          <span class="form-error">
-            @if (email?.errors?.['required']) { L'adresse email est requise. }
-            @if (email?.errors?.['email']) { Format d'email invalide. }
-          </span>
+            <span class="form-error">
+              @if (email?.errors?.['required']) { L'adresse email est requise. }
+              @if (email?.errors?.['email']) { Format d'email invalide. }
+            </span>
           }
         </div>
 
+        <!-- Password -->
         <div class="form-group">
           <div class="label-row">
             <label for="motDePasse">Mot de passe</label>
-            <a routerLink="/forgot-password" class="forgot-password-link" tabindex="-1">Mot de passe oublié ?</a>
+            <a href="javascript:void(0)" class="forgot-password-link" tabindex="0">Oublié ?</a>
           </div>
-          <div class="input-with-icon">
-            <i class="fa-solid fa-lock icon"></i>
+          <div class="input-with-icon" [class.is-invalid]="motDePasse?.invalid && motDePasse?.touched">
+            <i class="fa-solid fa-lock icon" aria-hidden="true"></i>
             <input
               id="motDePasse"
               [type]="showPassword() ? 'text' : 'password'"
               formControlName="motDePasse"
-              placeholder="••••••••"
-              [class.is-invalid]="motDePasse?.invalid && motDePasse?.touched"
+              placeholder="••••••••••••"
+              autocomplete="current-password"
             />
             <button
               type="button"
@@ -147,26 +245,42 @@
           </div>
           @if (motDePasse?.invalid && motDePasse?.touched) {
             <span class="form-error">
-              @if (motDePasse?.errors?.['required']) { Le mot de passe est requis. }
+              @if (motDePasse?.errors?.['required']) { Le mot de passe est obligatoire. }
               @if (motDePasse?.errors?.['minlength']) { Minimum 4 caractères. }
             </span>
           }
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block" [disabled]="isLoading()">
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="btn btn-primary btn-block"
+          [disabled]="isLoading()"
+          [class.is-loading]="isLoading()"
+        >
           @if (isLoading()) {
-          <i class="fa-solid fa-circle-notch fa-spin"></i>
-          <span>Connexion en cours...</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+            <span>Connexion en cours...</span>
           } @else {
-          <i class="fa-solid fa-arrow-right-to-bracket"></i>
-          <span>Se connecter</span>
+            <span>Se connecter</span>
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
           }
         </button>
       </form>
 
+      <!-- Registration link footer -->
       <div class="auth-footer">
         <p>Pas encore de compte ? <a routerLink="/register">Créer un compte</a></p>
       </div>
     </div>
-  </div>
+
+    <!-- MOBILE-ONLY SAMU FOOTER (Visible uniquement sur mobile / Ctrl+Shift+I) -->
+    <footer class="mobile-only-samu-footer">
+      <div class="samu-pill">
+        <i class="fa-solid fa-phone-volume"></i>
+        <span>Urgence Médicale & SAMU Sénégal : <strong>1515</strong></span>
+      </div>
+    </footer>
+
+  </main>
 </div>

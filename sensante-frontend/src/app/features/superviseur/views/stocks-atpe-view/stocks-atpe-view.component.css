@@ -1,0 +1,44 @@
+/* Stocks ATPE View CSS */
+:host {
+  display: block;
+  width: 100%;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Styles pour la matrice thermique Heatmap */
+.heat-cell {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.heat-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+
+/* Gradients fluides pour flux Sankey SVG */
+.sankey-link {
+  transition: stroke-opacity 0.25s, stroke-width 0.25s;
+}
+
+.sankey-link:hover {
+  stroke-opacity: 0.85 !important;
+}

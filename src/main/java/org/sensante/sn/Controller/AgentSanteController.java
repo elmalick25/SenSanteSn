@@ -4,10 +4,16 @@ import org.springframework.web.bind.annotation.*;
 import org.sensante.sn.Model.AgentSante;
 import org.sensante.sn.Service.AgentSanteService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/agents-sante")
+@Tag(name = "Gestion des Agents de Santé", description = "Administration des relais communautaires et Bajenu Gox")
+@PreAuthorize("hasAnyRole('SUPERVISEUR', 'ADMINISTRATEUR')")
 public class AgentSanteController {
 
     private final AgentSanteService agentSanteService;

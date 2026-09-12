@@ -1,0 +1,256 @@
+/* ── WORLD-CLASS LAYOUT & SPATIAL ARCHITECTURE ENGINE (NIVEAU GOD) ──
+ * Basé sur les standards Apple, Linear, Stripe et Nielsen Norman Group.
+ */
+
+:root {
+  /* Surface & Depth Invariants */
+  --canvas-bg: #f4f7fb;
+  --surface-pure: #ffffff;
+  --surface-soft: #f8fafd;
+  --shadow-elite: 0 10px 30px -5px rgba(112, 144, 176, 0.12), 0 4px 12px -2px rgba(112, 144, 176, 0.06);
+  --shadow-elite-hover: 0 14px 36px -4px rgba(112, 144, 176, 0.18), 0 6px 16px -2px rgba(112, 144, 176, 0.08);
+
+  /* Radius Rhythm */
+  --radius-card: 20px;
+  --radius-container: 24px;
+  --radius-control: 12px;
+  --radius-pill: 9999px;
+
+  /* Typographic Ink */
+  --ink-title: #1b254b;
+  --ink-body: #2b3674;
+  --ink-muted: #8f9bba;
+  --ink-light: #a3aed0;
+
+  /* Elite Gradients */
+  --grad-hero: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #2563eb 100%);
+  --grad-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --grad-amber: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --grad-rose: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  --grad-indigo: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+/* ── 1. PATRON A : TRI-PANEL WORKSPACE (100vh NO-SCROLL) ── */
+.tri-panel-workspace {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 340px;
+  gap: 20px;
+  min-height: calc(100vh - 84px);
+  background-color: var(--canvas-bg);
+  padding: 20px;
+  box-sizing: border-box;
+
+  @media (max-width: 1280px) {
+    grid-template-columns: 260px minmax(0, 1fr);
+    .inspector-panel {
+      grid-column: span 2;
+    }
+  }
+
+  @media (max-width: 900px) {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    padding: 12px;
+    gap: 16px;
+  }
+}
+
+.master-index-panel {
+  background: var(--surface-pure);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-elite);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.active-canvas-panel {
+  background: var(--surface-pure);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-elite);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.inspector-panel {
+  background: var(--surface-pure);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-elite);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+/* ── 2. PATRON B : BENTO GRID MODULAIRE ASYMÉTRIQUE ── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+  box-sizing: border-box;
+
+  .bento-col-12 { grid-column: span 12; }
+  .bento-col-8  { grid-column: span 8; }
+  .bento-col-7  { grid-column: span 7; }
+  .bento-col-6  { grid-column: span 6; }
+  .bento-col-5  { grid-column: span 5; }
+  .bento-col-4  { grid-column: span 4; }
+  .bento-col-3  { grid-column: span 3; }
+
+  @media (max-width: 1024px) {
+    .bento-col-8, .bento-col-7, .bento-col-6, .bento-col-5, .bento-col-4, .bento-col-3 {
+      grid-column: span 12;
+    }
+  }
+}
+
+/* Ligne des 4 KPIs d'élite */
+.kpi-row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 3. COMPOSANTS DE SURFACE (GESTALT ENCLOSURE) ── */
+.ui-card-pure {
+  background: var(--surface-pure);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elite);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-elite-hover);
+  }
+}
+
+/* Hero Banner Émotionnel */
+.ui-hero-banner {
+  background: var(--grad-hero);
+  border-radius: var(--radius-container);
+  padding: 24px 32px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 12px 32px -4px rgba(37, 99, 235, 0.25);
+
+  .hero-glass-btn {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+/* KPI Card avec Micro-Sparkline */
+.ui-kpi-card {
+  background: var(--surface-pure);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elite);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  padding: 18px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  .kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+
+    .kpi-icon-box {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-control);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .kpi-sparkline {
+      width: 60px;
+      height: 28px;
+    }
+  }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink-title);
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+
+  .kpi-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+  }
+
+  .kpi-pill-badge {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
+/* ── 4. PROGRESSIVE DISCLOSURE TABS ── */
+.ui-pill-tabs {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  gap: 4px;
+
+  .pill-tab {
+    padding: 6px 16px;
+    border-radius: var(--radius-pill);
+    border: none;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &.active {
+      background: var(--surface-pure);
+      color: var(--ink-title);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+}

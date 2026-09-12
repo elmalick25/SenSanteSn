@@ -1,10 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink, ActivatedRoute, Params } from '@angular/router';
+import { RouterLink, ActivatedRoute, Router, Params } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthResponse } from '../../../core/models/auth.model';
+import { Role } from '../../../core/models/role.enum';
 
 @Component({
   selector: 'app-login',
@@ -13,11 +14,11 @@ import { AuthResponse } from '../../../core/models/auth.model';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   loginForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -28,17 +29,29 @@ export class LoginComponent {
   showPassword = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
   infoMessage = signal<string | null>(null);
-
-  togglePasswordVisibility(): void {
-    this.showPassword.update(v => !v);
-  }
+  private returnUrl: string | null = null;
 
   constructor() {
     this.route.queryParams.subscribe((params: Params) => {
       if (params['expired'] === 'true') {
         this.infoMessage.set('Votre session a expiré. Veuillez vous reconnecter.');
       }
+      if (params['returnUrl']) {
+        this.returnUrl = params['returnUrl'];
+      }
     });
+  }
+
+  ngOnInit(): void {
+    const isRegistered = this.route.snapshot.queryParams['registered'] === 'true';
+    const isExpired = this.route.snapshot.queryParams['expired'] === 'true';
+    if (isRegistered || isExpired) {
+      this.authService.logout();
+    }
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword.update(v => !v);
   }
 
   onSubmit(): void {
@@ -53,8 +66,20 @@ export class LoginComponent {
     this.authService.login(this.loginForm.value).subscribe({
       next: (response: AuthResponse) => {
         this.isLoading.set(false);
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
-        this.router.navigateByUrl(returnUrl);
+        let defaultRoute = '/parent/dashboard';
+        if (response.role === Role.ADMINISTRATEUR) {
+          defaultRoute = '/admin/structures';
+        } else if (response.role === Role.SUPERVISEUR) {
+          defaultRoute = '/superviseur/cartographie';
+        } else if (response.role === Role.AGENT_SANTE) {
+          defaultRoute = '/agent/tour-de-controle';
+        } else if (response.role === Role.MEDECIN) {
+          defaultRoute = '/medecin/prise-de-service';
+        }
+        const targetRoute = this.returnUrl || defaultRoute;
+        setTimeout(() => {
+          this.router.navigateByUrl(targetRoute);
+        }, 400);
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);
@@ -74,3 +99,4 @@ export class LoginComponent {
   get email() { return this.loginForm.get('email'); }
   get motDePasse() { return this.loginForm.get('motDePasse'); }
 }
+

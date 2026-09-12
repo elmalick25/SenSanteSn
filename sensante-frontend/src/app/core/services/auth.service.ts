@@ -20,7 +20,7 @@ export class AuthService {
   readonly isAuthenticated = computed(() => !!this.currentUser());
   readonly currentRole = computed(() => this.currentUser()?.role ?? null);
 
-  login(credentials: LoginRequest): Observable<AuthResponse> {
+    login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.API_URL}/login`, credentials).pipe(
       tap((response: AuthResponse) => {
         const session: UserSession = {
@@ -28,6 +28,8 @@ export class AuthService {
           nom: response.nom,
           prenom: response.prenom,
           email: response.email,
+          telephone: response.telephone,
+          avatarUrl: response.avatarUrl,
           role: response.role,
           token: response.token
         };
@@ -39,21 +41,7 @@ export class AuthService {
   }
 
   register(payload: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API_URL}/register`, payload).pipe(
-      tap((response: AuthResponse) => {
-        const session: UserSession = {
-          idUser: response.idUser,
-          nom: response.nom,
-          prenom: response.prenom,
-          email: response.email,
-          role: response.role,
-          token: response.token
-        };
-        this.storage.saveToken(response.token);
-        this.storage.saveUser(session);
-        this.currentUser.set(session);
-      })
-    );
+    return this.http.post<AuthResponse>(`${this.API_URL}/register`, payload);
   }
 
   logout(): void {
@@ -69,5 +57,20 @@ export class AuthService {
       return roles.includes(user.role);
     }
     return user.role === roles;
+  }
+
+  updateCurrentUser(partial: Partial<UserSession>): void {
+    const current = this.currentUser();
+    if (!current) return;
+    const updated: UserSession = { ...current, ...partial };
+    this.storage.saveUser(updated);
+    this.currentUser.set(updated);
+  }
+
+  changePassword(ancienMotDePasse: string, nouveauMotDePasse: string): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>('/api/utilisateurs/me/password', {
+      ancienMotDePasse,
+      nouveauMotDePasse
+    });
   }
 }

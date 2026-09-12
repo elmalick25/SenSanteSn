@@ -1,0 +1,756 @@
+<!-- Vue 2: Scanner QR & Fiche Express (Poste Médina) -->
+<div class="space-y-6">
+
+  <!-- TOAST NOTIFICATION FLOATING -->
+  @if (toastMessage()) {
+    <div class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 bg-slate-900/95 text-white rounded-xl shadow-2xl border border-emerald-500/40 backdrop-blur-md transition-all animate-bounce">
+      <span class="material-symbols-outlined text-emerald-400 text-xl">verified</span>
+      <span class="text-sm font-medium tracking-wide">{{ toastMessage() }}</span>
+      <button (click)="toastMessage.set(null)" class="text-slate-400 hover:text-white ml-2">
+        <span class="material-symbols-outlined text-sm">close</span>
+      </button>
+    </div>
+  }
+
+  <!-- ÉTAT 1: CHARGEMENT (SKELETON) -->
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-pulse">
+      <!-- Skeleton Colonne Gauche -->
+      <div class="lg:col-span-5 space-y-4">
+        <div class="h-96 bg-slate-200 rounded-2xl"></div>
+        <div class="h-28 bg-slate-200 rounded-xl"></div>
+      </div>
+      <!-- Skeleton Colonne Droite -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="h-16 bg-slate-200 rounded-xl"></div>
+        <div class="h-44 bg-slate-200 rounded-2xl"></div>
+        <div class="h-32 bg-slate-200 rounded-xl"></div>
+        <div class="h-24 bg-slate-200 rounded-xl"></div>
+        <div class="h-14 bg-slate-200 rounded-xl"></div>
+      </div>
+    </div>
+  }
+
+  <!-- ÉTAT 2: ERREUR / CAS LIMITE -->
+  @else if (errorMessage()) {
+    <div class="p-8 bg-red-50 border-2 border-red-200 rounded-2xl text-center space-y-4 max-w-2xl mx-auto shadow-sm">
+      <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
+        <span class="material-symbols-outlined text-3xl">error</span>
+      </div>
+      <h3 class="text-lg font-bold text-slate-900 text-balance">Échec de communication avec le carnet</h3>
+      <p class="text-sm text-red-700 text-pretty">{{ errorMessage() }}</p>
+      <div class="flex justify-center gap-3 pt-2">
+        <button
+          (click)="chargerFiche('SEN-MED-2489')"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow transition-all whitespace-nowrap">
+          <span class="material-symbols-outlined text-sm">refresh</span>
+          Réessayer la synchronisation
+        </button>
+        <button
+          (click)="chargerFiche('SEN-MED-2311')"
+          class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl whitespace-nowrap">
+          Charger Aminata Seck #2311
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ÉTAT 3: NOMINAL (SCANNER TOUJOURS ACTIF & OPÉRATIONNEL) -->
+  @else {
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- ========================================== -->
+        <!-- COLONNE GAUCHE (5 COLS): SCANNER OPTIQUE & RECHERCHE -->
+        <!-- ========================================== -->
+        <div class="lg:col-span-5 space-y-4">
+
+          <!-- BOÎTIER DE CAPTURE CAMÉRA TERRAIN -->
+          <div class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-xl relative">
+            <!-- Barre d'état vidéo supérieure -->
+            <div class="px-4 py-3 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between backdrop-blur-sm flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full" [ngClass]="cameraActive() ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'"></span>
+                <span class="text-[11px] font-mono tracking-wider font-semibold text-emerald-400 uppercase whitespace-nowrap">
+                  {{ cameraActive() ? 'FLUX VIDÉO ACTIF • ' + (cameraFacing() | uppercase) : 'CAMÉRA EN VEILLE' }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <!-- Bouton On/Off Caméra -->
+                <button
+                  type="button"
+                  (click)="toggleCamera()"
+                  [ngClass]="cameraActive() ? 'bg-red-600/90 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white'"
+                  class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer whitespace-nowrap"
+                >
+                  <span class="material-symbols-outlined text-sm">{{ cameraActive() ? 'videocam_off' : 'videocam' }}</span>
+                  <span>{{ cameraActive() ? 'Arrêter' : 'Activer Caméra' }}</span>
+                </button>
+                <!-- Bascule Caméra -->
+                <button
+                  type="button"
+                  (click)="flipCamera()"
+                  [disabled]="!cameraActive()"
+                  title="Bascule caméra avant/arrière"
+                  class="p-1.5 rounded-lg bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-base">cameraswitch</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Fenêtre de visée optique (Viewport avec Caméra Réelle & Réticule) -->
+            <div class="relative h-80 sm:h-96 bg-slate-950 flex items-center justify-center overflow-hidden p-6">
+              <!-- Flux vidéo réel si caméra active -->
+              <video
+                #videoPlayer
+                autoplay
+                playsinline
+                muted
+                [class.hidden]="!cameraActive()"
+                class="absolute inset-0 w-full h-full object-cover z-10"
+              ></video>
+
+              <!-- Grille de fond optique discrète (quand vidéo inactive) -->
+              <div *ngIf="!cameraActive()" class="absolute inset-0 opacity-15 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]"></div>
+
+              <!-- Message si erreur d'accès caméra -->
+              <div *ngIf="cameraError() && !cameraActive()" class="absolute inset-x-4 top-4 p-3 bg-red-950/80 border border-red-500 text-red-200 rounded-lg text-xs text-center z-30">
+                <span class="material-symbols-outlined text-sm align-middle mr-1">warning</span>
+                {{ cameraError() }}
+              </div>
+
+              <!-- Faisceau laser dynamique -->
+              <div class="absolute left-6 right-6 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] scanner-laser pointer-events-none z-20"></div>
+
+              <!-- Cadre de ciblage QR avec coins arrondis renforcés -->
+              <div class="w-56 h-56 sm:w-64 sm:h-64 border-2 border-emerald-500/70 rounded-2xl relative p-4 flex flex-col items-center justify-between shadow-[inset_0_0_20px_rgba(16,185,129,0.15)] backdrop-blur-[1px] z-20 pointer-events-none">
+                <!-- Coins décoratifs de ciblage -->
+                <span class="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-emerald-400 rounded-tl-md"></span>
+                <span class="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-emerald-400 rounded-tr-md"></span>
+                <span class="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-emerald-400 rounded-bl-md"></span>
+                <span class="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-emerald-400 rounded-br-md"></span>
+
+                <!-- Badge supérieur dans le cadre -->
+                <span class="text-[10px] font-mono font-bold tracking-widest text-emerald-400/90 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/40 whitespace-nowrap">
+                  {{ cameraActive() ? 'LECTURE TEMPS RÉEL' : 'AUTOFOCUS PRÊT' }}
+                </span>
+
+                <!-- Réticule central QR si caméra éteinte -->
+                <div *ngIf="!cameraActive()" class="text-center space-y-2 opacity-80 my-auto">
+                  <span class="material-symbols-outlined text-5xl text-emerald-400/80 animate-pulse">qr_code_scanner</span>
+                  <p class="text-[11px] text-slate-300 font-medium tracking-wide whitespace-nowrap">Activez la caméra ou saisissez le code</p>
+                </div>
+
+                <!-- Badge inférieur dans le cadre -->
+                <span class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-700 whitespace-nowrap">
+                  PORTÉE OPTIMALE : 15-25 CM
+                </span>
+              </div>
+
+              <!-- Overlay d'aide contextuelle en bas du viewport -->
+              <div class="absolute bottom-3 left-4 right-4 text-center z-20">
+                <span class="text-[11px] text-slate-300 bg-slate-900/90 px-3 py-1 rounded-full border border-slate-800 shadow-md whitespace-nowrap">
+                  Scannage optique haute vitesse &bull; Reconnaissance carnet PEV
+                </span>
+              </div>
+            </div>
+
+            <!-- Saisie Manuelle de Secours & Contrôles d'Action -->
+            <div class="p-4 bg-slate-900 border-t border-slate-800 space-y-3">
+              <form (ngSubmit)="onSearchSubmit()" class="flex gap-2">
+                <div class="relative flex-1">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-lg">search</span>
+                  <input
+                    type="text"
+                    [ngModel]="queryInput()"
+                    (ngModelChange)="queryInput.set($event)"
+                    name="queryInput"
+                    placeholder="N° Matricule (ex: SEN-MED-2489)"
+                    class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white placeholder-slate-500 transition-all uppercase"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-900/40 flex items-center gap-1.5 whitespace-nowrap">
+                  <span class="material-symbols-outlined text-sm">search_check</span>
+                  Rechercher
+                </button>
+              </form>
+
+              <!-- Bannière d'information non-bloquante si matricule introuvable -->
+              @if (searchWarning()) {
+                <div class="p-3 bg-amber-500/20 border border-amber-400/60 rounded-xl flex items-start gap-2.5 text-amber-200">
+                  <span class="material-symbols-outlined text-amber-300 text-lg flex-shrink-0 mt-0.5">warning</span>
+                  <div class="flex-1 text-[11px] leading-relaxed">
+                    <strong class="font-bold text-amber-300">Recherche infructueuse :</strong>
+                    <p class="text-amber-100 text-pretty">{{ searchWarning() }}</p>
+                  </div>
+                  <button type="button" (click)="searchWarning.set(null)" class="text-amber-300 hover:text-white cursor-pointer p-0.5" title="Fermer">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                  </button>
+                </div>
+              }
+
+              <!-- Derniers Scans Récents (Chips d'accès rapide) -->
+              <div class="pt-1">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">Derniers carnets scannés</span>
+                  <span class="text-[10px] text-slate-500 font-mono">Poste Médina</span>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  @for (scan of scansRecents(); track scan.id) {
+                    <button
+                      type="button"
+                      (click)="chargerDepuisRecent(scan)"
+                      [ngClass]="ficheExpress()?.matricule === scan.matricule ? 'bg-emerald-950 text-emerald-300 border-emerald-500/80 shadow-sm shadow-emerald-900/30' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border-slate-700'"
+                      class="px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all flex items-center gap-1.5 whitespace-nowrap">
+                      <span class="w-1.5 h-1.5 rounded-full" [ngClass]="scan.statut === 'MAS' ? 'bg-red-500' : 'bg-amber-400'"></span>
+                      <span>{{ scan.libelleChip }}</span>
+                      <span class="text-[9px] text-slate-400 font-mono">{{ scan.heureScan }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARTE DIRECTIVE OPÉRATIONNELLE TERRAIN -->
+          <div class="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 flex gap-3 text-blue-900">
+            <span class="material-symbols-outlined text-blue-600 text-xl flex-shrink-0 mt-0.5">verified_user</span>
+            <div class="space-y-1">
+              <h4 class="text-xs font-bold tracking-tight whitespace-nowrap">Directive Officielle MSAS &bull; PRN</h4>
+              <p class="text-xs text-blue-800 leading-relaxed text-pretty">
+                Scanner le QR code figurant sur le carnet jaune du dispensaire. En cas de code endommagé ou d'absence de carnet, entrer l'identifiant matricule ou contacter l'infirmier chef de poste.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- COLONNE DROITE (7 COLS): FICHE EXPRESS TACTIQUE -->
+        <!-- ========================================== -->
+        @if (ficheExpress(); as fiche) {
+          <div class="lg:col-span-7 space-y-5">
+
+          <!-- 1. BANNIÈRE DE VALIDATION DU CARNET -->
+          <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white rounded-2xl p-4 shadow-lg shadow-emerald-900/10 flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center flex-shrink-0 border border-white/30">
+                <span class="material-symbols-outlined text-2xl text-white">how_to_reg</span>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h2 class="text-sm font-bold tracking-tight text-balance">Carnet Dispensaire Identifié</h2>
+                  <span class="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-mono font-bold tracking-wider uppercase whitespace-nowrap">
+                    #{{ fiche.matricule }}
+                  </span>
+                </div>
+                <p class="text-xs text-emerald-100 flex items-center gap-2 mt-0.5 whitespace-nowrap">
+                  <span>{{ fiche.horodatageValidation }}</span>
+                  <span>&bull;</span>
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[13px]">health_and_safety</span>
+                    Poste de Santé Médina
+                  </span>
+                </p>
+              </div>
+            </div>
+            <span class="px-3 py-1 bg-emerald-950/40 border border-emerald-300/30 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap">
+              Secteur Médina
+            </span>
+          </div>
+
+          <!-- 2. IDENTITÉ DE L'ENFANT & TUTEUR (FAMILLE) -->
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div class="flex items-center gap-4">
+                <!-- Avatar enfant avec indicateur de statut -->
+                <div class="relative">
+                  <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white font-extrabold text-xl shadow-md shadow-emerald-900/20">
+                    {{ (fiche.prenom ? fiche.prenom.charAt(0) : 'M') + (fiche.nom ? fiche.nom.charAt(0) : 'N') }}
+                  </div>
+                  <span
+                    class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
+                    [ngClass]="fiche.statutNutritionnel === 'MAS' ? 'bg-red-500' : 'bg-amber-400'"></span>
+                </div>
+                <div>
+                  <h3 class="text-lg font-extrabold text-slate-900 text-balance">{{ fiche.nomCompletEnfant }}</h3>
+                  <div class="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-slate-500">
+                    <span class="font-semibold text-slate-700 whitespace-nowrap">{{ fiche.ageMois }} mois</span>
+                    <span>&bull;</span>
+                    <span class="whitespace-nowrap">{{ fiche.dateNaissanceTexte }}</span>
+                    <span>&bull;</span>
+                    <span class="font-medium whitespace-nowrap">{{ fiche.sexe === 'M' ? 'Garçon' : 'Fille' }}</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1 flex items-center gap-1 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm text-slate-400">location_on</span>
+                    {{ fiche.secteurRue }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Badge de gravité clinique -->
+              <div class="self-start sm:self-auto">
+                <span
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap shadow-sm"
+                  [ngClass]="fiche.statutNutritionnel === 'MAS' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-amber-100 text-amber-800 border border-amber-200'">
+                  <span class="material-symbols-outlined text-sm">{{ fiche.statutNutritionnel === 'MAS' ? 'crisis_alert' : 'warning' }}</span>
+                  {{ fiche.statutBadgeTexte }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Informations Mère / Accompagnante -->
+            <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="space-y-0.5">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 whitespace-nowrap">Mère / Accompagnante</span>
+                <p class="text-xs font-bold text-slate-800 whitespace-nowrap">{{ fiche.nomTuteur }}</p>
+              </div>
+              <div class="space-y-0.5">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 whitespace-nowrap">Contact Téléphonique</span>
+                <p class="text-xs font-bold text-slate-800 font-mono whitespace-nowrap">{{ fiche.telephoneTuteur }}</p>
+              </div>
+              <div class="space-y-0.5">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 whitespace-nowrap">Consentement &amp; Suivi</span>
+                <p class="text-xs font-semibold text-emerald-700 flex items-center gap-1 whitespace-nowrap">
+                  <span class="material-symbols-outlined text-xs">sms</span>
+                  {{ fiche.suiviCommunautaire }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. ÉTAT NUTRITIONNEL & BANDELETTE MUAC (PÉRIMÈTRE BRACHIAL) -->
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-700 text-xl">straighten</span>
+                <h4 class="text-sm font-bold text-slate-900 text-balance">Périmètre Brachial (MUAC) &amp; Clinique</h4>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-500 font-medium">Œdèmes bilatéraux :</span>
+                <span
+                  class="px-2.5 py-0.5 rounded-md text-xs font-bold whitespace-nowrap"
+                  [ngClass]="fiche.oedemes ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'">
+                  {{ fiche.oedemesGrade }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Règle tricolore MUAC OMS avec curseur positionné -->
+            <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-700 whitespace-nowrap">Bandelette Shakir</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] text-slate-500 font-medium">Valeur mesurée :</span>
+                  <span class="text-base font-extrabold text-red-600 font-mono whitespace-nowrap">{{ fiche.muacMm }}&nbsp;mm</span>
+                </div>
+              </div>
+
+              <!-- Barres de seuils MUAC (Rouge < 115mm | Jaune 115-124mm | Vert >= 125mm) -->
+              <div class="relative h-6 rounded-lg overflow-hidden flex shadow-inner border border-slate-300">
+                <!-- Zone Rouge MAS (< 115mm) ~35% -->
+                <div class="w-[35%] bg-red-500 flex items-center justify-center text-[10px] font-bold text-white tracking-wider">
+                  MAS &lt; 115 mm
+                </div>
+                <!-- Zone Jaune MAM (115-124mm) ~25% -->
+                <div class="w-[25%] bg-amber-400 flex items-center justify-center text-[10px] font-bold text-amber-950 tracking-wider">
+                  MAM 115-124
+                </div>
+                <!-- Zone Verte Normal (>= 125mm) ~40% -->
+                <div class="w-[40%] bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white tracking-wider">
+                  NORMAL &ge; 125 mm
+                </div>
+              </div>
+
+              <!-- Indicateur curseur sur la jauge -->
+              <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
+                <span>0&nbsp;mm</span>
+                <span class="font-bold text-red-600">&bull; Seuil MAS 115&nbsp;mm</span>
+                <span class="font-bold text-amber-600">&bull; Seuil MAM 125&nbsp;mm</span>
+                <span>200&nbsp;mm</span>
+              </div>
+            </div>
+
+            <!-- Alerte clinique automatique -->
+            @if (fiche.statutNutritionnel === 'MAS') {
+              <div class="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-red-800 text-xs">
+                <span class="material-symbols-outlined text-red-600 text-lg flex-shrink-0 mt-0.5">report</span>
+                <p class="leading-relaxed text-pretty">
+                  <strong>Critère CRENAS immédiat :</strong> Périmètre brachial inférieur à 115&nbsp;mm ({{ fiche.muacMm }}&nbsp;mm) avec œdèmes bilatéraux de carence. Protocole national de prise en charge MAS à engager sur-le-champ.
+                </p>
+              </div>
+            }
+          </div>
+
+          <!-- 4. HISTORIQUE PONDÉRAL (3 DERNIÈRES PESÉES) -->
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-700 text-xl">monitor_weight</span>
+                <h4 class="text-sm font-bold text-slate-900 text-balance">Évolution Pondérale Récente</h4>
+              </div>
+              <span class="text-xs text-slate-500 font-medium whitespace-nowrap">3 dernières pesées enregistrées</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              @for (pesee of fiche.historiquePonderal; track $index) {
+                <div
+                  class="p-3.5 rounded-xl border transition-all space-y-1"
+                  [ngClass]="pesee.critique ? 'bg-red-50/60 border-red-200' : 'bg-slate-50 border-slate-200/80'">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-semibold text-slate-500 whitespace-nowrap">{{ pesee.date }}</span>
+                    <span
+                      class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
+                      [ngClass]="pesee.critique ? 'bg-red-200 text-red-800' : 'bg-slate-200 text-slate-700'">
+                      {{ pesee.variationTexte }}
+                    </span>
+                  </div>
+                  <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-extrabold text-slate-900 font-mono">{{ pesee.poidsKg }}</span>
+                    <span class="text-xs font-bold text-slate-500">kg</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 leading-tight text-pretty">{{ pesee.sousTitre }}</p>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 5. TÉLÉMÉTRIE STOCK ATPE DU FOYER -->
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-600 text-xl">inventory_2</span>
+                <h4 class="text-sm font-bold text-slate-900 text-balance">Stock ATPE (Plumpy'Nut) au Domicile</h4>
+              </div>
+              <span
+                class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+                [ngClass]="fiche.ruptureStockDomicile ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'">
+                <span class="material-symbols-outlined text-xs">{{ fiche.ruptureStockDomicile ? 'warning' : 'check_circle' }}</span>
+                {{ fiche.ruptureStockDomicile ? 'RUPTURE IMMINENTE' : 'STOCK CONFORME' }}
+              </span>
+            </div>
+
+            <div class="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-center justify-between flex-wrap gap-3">
+              <div class="space-y-0.5">
+                <p class="text-xs font-bold text-amber-950">{{ fiche.rationDomicileTexte }}</p>
+                <p class="text-[11px] text-amber-800 text-pretty">
+                  Prescription médicale active : 2 sachets / jour. Risque d'interruption du protocole de récupération métabolique.
+                </p>
+              </div>
+              <button
+                (click)="ouvrirAtpeModal()"
+                class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all whitespace-nowrap flex-shrink-0">
+                <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                Délivrer 14 sachets
+              </button>
+            </div>
+          </div>
+
+          <!-- 6. ACTIONS TACTIQUES DIRECTES (CTAs) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <!-- CTA 1: Nouveau Bilan -->
+            <button
+              (click)="ouvrirBilanModal()"
+              class="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-900/10 flex items-center justify-center gap-2 transition-all whitespace-nowrap">
+              <span class="material-symbols-outlined text-base">edit_note</span>
+              Nouveau Bilan Terrain
+            </button>
+
+            <!-- CTA 2: Délivrance ATPE -->
+            <button
+              (click)="ouvrirAtpeModal()"
+              class="px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-900/10 flex items-center justify-center gap-2 transition-all whitespace-nowrap">
+              <span class="material-symbols-outlined text-base">medication</span>
+              Délivrer ATPE
+            </button>
+
+            <!-- CTA 3: Assigner Créneau CRENAS -->
+            <button
+              (click)="ouvrirRdvModal()"
+              class="px-4 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-md shadow-slate-900/10 flex items-center justify-center gap-2 transition-all whitespace-nowrap">
+              <span class="material-symbols-outlined text-base">calendar_month</span>
+              Assigner Créneau
+            </button>
+          </div>
+
+          <!-- 7. BOUTON URGENCE SAMU 1515 -->
+          <div class="p-4 bg-red-600 text-white rounded-2xl shadow-lg shadow-red-900/20 flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border border-white/30">
+                <span class="material-symbols-outlined text-2xl text-white animate-pulse">e911_emergency</span>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold tracking-tight uppercase text-balance">Cellule d'Urgence Pédiatrique &bull; SAMU 1515</h5>
+                <p class="text-[11px] text-red-100 text-pretty">En cas de complications aiguës (léthargie, détresse respiratoire, convulsions).</p>
+              </div>
+            </div>
+            <button
+              (click)="declencherAlerteSamu()"
+              [disabled]="isProcessingAction()"
+              class="px-4 py-2 bg-white hover:bg-red-50 active:scale-95 text-red-700 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 whitespace-nowrap">
+              <span class="material-symbols-outlined text-sm">phone_in_talk</span>
+              Alerte SAMU 1515 P1
+            </button>
+          </div>
+
+        </div>
+      } @else {
+        <!-- État d'attente / vide pour la colonne droite -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center space-y-4 shadow-2xs min-h-[420px] flex flex-col items-center justify-center">
+          <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto shadow-2xs">
+            <span class="material-symbols-outlined text-3xl">qr_code_scanner</span>
+          </div>
+          <h3 class="text-base font-bold text-slate-800 text-balance">En attente de scan ou de sélection</h3>
+          <p class="text-xs text-slate-500 max-w-md mx-auto text-pretty leading-relaxed">
+            Pointez la caméra vers le QR code du carnet de santé jaune ou saisissez un matricule ci-contre pour charger instantanément les constantes, antécédents et protocoles de prise en charge.
+          </p>
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- ======================================================= -->
+  <!-- MODALE 1: NOUVEAU BILAN TERRAIN (PESÉE & PÉRIMÈTRE) -->
+  <!-- ======================================================= -->
+  @if (showBilanModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-emerald-600 text-xl">monitor_weight</span>
+            <h3 class="text-sm font-bold text-slate-900 whitespace-nowrap">Nouveau Bilan Anthropométrique</h3>
+          </div>
+          <button (click)="fermerBilanModal()" class="text-slate-400 hover:text-slate-600">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        <form (ngSubmit)="sauvegarderBilan()" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Poids (kg)</label>
+              <input
+                type="number"
+                step="0.1"
+                [(ngModel)]="formBilan.poidsKg"
+                name="poidsKg"
+                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Taille (cm)</label>
+              <input
+                type="number"
+                step="0.5"
+                [(ngModel)]="formBilan.tailleCm"
+                name="tailleCm"
+                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">MUAC Périmètre (mm)</label>
+              <input
+                type="number"
+                [(ngModel)]="formBilan.muacMm"
+                name="muacMm"
+                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Œdèmes bilatéraux</label>
+              <select
+                [(ngModel)]="formBilan.oedemes"
+                name="oedemes"
+                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                <option [ngValue]="false">Absents (0)</option>
+                <option [ngValue]="true">Présents (Grade + / ++)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Observations cliniques</label>
+            <textarea
+              [(ngModel)]="formBilan.notes"
+              name="notes"
+              rows="2"
+              class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              placeholder="Signes de léthargie, appétit, toux...">
+            </textarea>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              (click)="fermerBilanModal()"
+              class="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 whitespace-nowrap">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              [disabled]="isProcessingAction()"
+              class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-900/10 flex items-center gap-1.5 whitespace-nowrap">
+              <span class="material-symbols-outlined text-sm">save</span>
+              Enregistrer les Constantes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================= -->
+  <!-- MODALE 2: DÉLIVRANCE ATPE EXPRESS (14 SACHETS) -->
+  <!-- ======================================================= -->
+  @if (showAtpeModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-teal-600 text-xl">medication</span>
+            <h3 class="text-sm font-bold text-slate-900 whitespace-nowrap">Dispensation ATPE &bull; Plumpy'Nut</h3>
+          </div>
+          <button (click)="fermerAtpeModal()" class="text-slate-400 hover:text-slate-600">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        <form (ngSubmit)="validerDelivranceAtpe()" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Nombre de sachets délivrés</label>
+            <input
+              type="number"
+              [(ngModel)]="formAtpe.nombreSachets"
+              name="nombreSachets"
+              class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              required
+            />
+            <p class="text-[10px] text-slate-500 mt-1 whitespace-nowrap">Ration standard hebdomadaire : 14 sachets (2 sachets/jour)</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">N° Lot Pharmacie Régionale</label>
+            <input
+              type="text"
+              [(ngModel)]="formAtpe.lotNumero"
+              name="lotNumero"
+              class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono uppercase focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Motif de la dispensation</label>
+            <input
+              type="text"
+              [(ngModel)]="formAtpe.motif"
+              name="motif"
+              class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            />
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              (click)="fermerAtpeModal()"
+              class="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 whitespace-nowrap">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              [disabled]="isProcessingAction()"
+              class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-900/10 flex items-center gap-1.5 whitespace-nowrap">
+              <span class="material-symbols-outlined text-sm">done_all</span>
+              Valider la Délivrance
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================= -->
+  <!-- MODALE 3: ASSIGNATION CRÉNEAU CRENAS -->
+  <!-- ======================================================= -->
+  @if (showRdvModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-slate-800 text-xl">calendar_month</span>
+            <h3 class="text-sm font-bold text-slate-900 whitespace-nowrap">Assigner un Créneau de Contrôle</h3>
+          </div>
+          <button (click)="fermerRdvModal()" class="text-slate-400 hover:text-slate-600">
+            <span class="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        <form (ngSubmit)="validerAssignationRdv()" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Date prévue</label>
+              <input
+                type="text"
+                [(ngModel)]="formRdv.date"
+                name="date"
+                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:border-slate-800"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Heure</label>
+              <input
+                type="text"
+                [(ngModel)]="formRdv.heure"
+                name="heure"
+                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono focus:border-slate-800"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Praticien / Structure</label>
+            <input
+              type="text"
+              [(ngModel)]="formRdv.praticien"
+              name="praticien"
+              class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:border-slate-800"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 whitespace-nowrap">Motif de consultation</label>
+            <input
+              type="text"
+              [(ngModel)]="formRdv.motif"
+              name="motif"
+              class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:border-slate-800"
+            />
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              (click)="fermerRdvModal()"
+              class="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 whitespace-nowrap">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="px-5 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 whitespace-nowrap">
+              <span class="material-symbols-outlined text-sm">check</span>
+              Confirmer le Créneau
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

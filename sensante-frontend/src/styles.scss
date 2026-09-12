@@ -1,40 +1,151 @@
-:root {
-  --primary-50: #f0fdfa;
-  --primary-100: #ccfbf1;
-  --primary-500: #14b8a6;
-  --primary-600: #0d9488;
-  --primary-700: #0f766e;
-  --primary-800: #115e59;
-  --primary-900: #134e4a;
+@import 'leaflet/dist/leaflet.css';
 
-  --accent-gold: #f59e0b;
-  --status-success: #10b981;
-  --status-warning: #f59e0b;
-  --status-danger: #ef4444;
-  --status-mas: #dc2626;
-  --status-mam: #f97316;
-  --status-normal: #10b981;
+:root {
+  --primary-50: #f0fdf4;
+  --primary-100: #dcfce7;
+  --primary-500: #065f46;
+  --primary-600: #065f46;
+  --primary-700: #065f46;
+  --primary-800: #044e3f;
+  --primary-900: #022c22;
+
+  --accent-gold: #d97706;
+  --status-success: #065f46;
+  --status-warning: #d97706;
+  --status-danger: #dc2626;
+  --status-mas: #be123c;
+  --status-mam: #c2410c;
+  --status-normal: #065f46;
+
+  /* ── Ruban de Shakir & Nutrition Tokens ── */
+  --shakir-red: #e11d48;
+  --shakir-yellow: #f59e0b;
+  --shakir-green: #10b981;
+  --shakir-red-bg: #fff1f2;
+  --shakir-yellow-bg: #fffbeb;
+  --shakir-green-bg: #f0fdf4;
+  --shakir-red-border: #fecdd3;
+  --shakir-yellow-border: #fde68a;
+  --shakir-green-border: #bbf7d0;
 
   --bg-app: #f8fafc;
   --bg-card: #ffffff;
-  --bg-glass: rgba(255, 255, 255, 0.85);
+  --bg-glass: rgba(255, 255, 255, 0.88);
   --border-light: #e2e8f0;
-  --border-glass: rgba(255, 255, 255, 0.4);
+  --border-subtle: rgba(226, 232, 240, 0.7);
+  --border-glass: rgba(255, 255, 255, 0.5);
 
   --text-main: #0f172a;
+  --text-body: #334155;
   --text-muted: #64748b;
   --text-light: #94a3b8;
 
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-glow: 0 0 20px rgba(13, 148, 136, 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-whisper: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  --shadow-card: 0 4px 16px -1px rgba(15, 23, 42, 0.04);
+  --shadow-glow: 0 0 20px rgba(13, 148, 136, 0.18);
 
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 24px;
+
+  /* ── Mobile-First Layout Tokens ── */
+  --bottom-nav-height: 68px;
+  --topbar-height: 60px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
+
+/* ── Fluid Typography ── */
+h1,
+.h1 {
+  font-size: clamp(1.375rem, 4vw, 1.875rem);
+}
+
+h2,
+.h2 {
+  font-size: clamp(1.15rem, 3vw, 1.5rem);
+}
+
+h3,
+.h3 {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+/* ── Safe-Area Inset Utilities ── */
+.safe-top {
+  padding-top: var(--safe-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+/* ── Touch Target Enforcer (WCAG 2.5.5) ── */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Skeleton Loading Shimmer ── */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f4f8 25%, #e2e8f0 50%, #f0f4f8 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Entrance Animations ── */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulseDot {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.45);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(13, 148, 136, 0);
+  }
+}
+
 
 * {
   box-sizing: border-box;
@@ -42,7 +153,13 @@
   padding: 0;
 }
 
+html,
 body {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);
@@ -96,7 +213,8 @@ a {
   &.btn-primary {
     background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(6, 95, 70, 0.25);
 
     &:hover:not(:disabled) {
       background: linear-gradient(135deg, var(--primary-700), var(--primary-900));
@@ -249,4 +367,116 @@ a {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
   user-select: none;
+}
+
+/* ── Import World-Class Spatial Architecture Standards ── */
+@import 'styles/world-class-layout';
+
+@keyframes senPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.18);
+    opacity: 0.75;
+  }
+}
+
+.pulse-dot {
+  animation: senPulse 2s infinite ease-in-out;
+}
+/* ══════════════════════════════════════════════════════════════════
+   SIDEBAR "BOARDS" ARRONDIS — Design flottant unifié (tous espaces)
+   Appliqué globalement aux 5 layouts (Parent, Agent, Médecin,
+   Superviseur, Admin) sans dupliquer de classes dans chaque template.
+   ══════════════════════════════════════════════════════════════════ */
+
+$sen-sidebars: 'app-parent-layout, app-agent-layout, app-medecin-layout, app-superviseur-layout, app-admin-layout';
+
+#{$sen-sidebars} {
+  aside {
+    /* Panneau flottant à coins arrondis */
+    margin: 12px !important;
+    height: calc(100vh - 24px) !important;
+    max-height: calc(100vh - 24px);
+    border-radius: 28px !important;
+    border-right: 0 !important;
+    box-shadow:
+      0 24px 60px -18px rgba(0, 52, 38, 0.55),
+      0 2px 0 0 rgba(255, 255, 255, 0.06) inset;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.22);
+      border-radius: 9999px;
+    }
+
+    /* Chaque cluster de navigation devient un "board" arrondi */
+    nav {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 22px;
+      padding: 8px;
+      backdrop-filter: blur(6px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    /* Liens & boutons de navigation : pastilles douces */
+    nav a,
+    nav button {
+      border-radius: 16px !important;
+      transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: translateX(2px);
+      }
+    }
+
+    /* Cartes d'identité / statut / footer : mêmes rayons généreux */
+    > div > div,
+    > div > section {
+      border-radius: 20px;
+    }
+
+    /* Séparateurs adoucis */
+    .border-b,
+    .border-t {
+      border-color: rgba(255, 255, 255, 0.10) !important;
+    }
+  }
+
+  /* Mobile : le panneau se colle au bord (pas de liseré visible) */
+  @media (max-width: 1279px) {
+    aside {
+      margin: 0 !important;
+      height: 100vh !important;
+      max-height: 100vh;
+      border-radius: 0 28px 28px 0 !important;
+    }
+  }
+}
+
+/* ── Polish général : canevas plus doux & cartes plus lisibles ── */
+body {
+  background-image:
+    radial-gradient(1200px 600px at 12% -10%, rgba(13, 148, 136, 0.07), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(59, 130, 246, 0.06), transparent 55%);
+  background-attachment: fixed;
+}
+
+.card,
+.ui-card-pure,
+.ui-kpi-card {
+  border-radius: 20px;
 }

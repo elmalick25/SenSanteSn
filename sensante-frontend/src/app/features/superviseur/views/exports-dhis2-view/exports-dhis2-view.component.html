@@ -1,0 +1,382 @@
+<section class="dhis2-studio">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       NOTIFICATION TOAST (success / error)
+  ════════════════════════════════════════════════════════════════════ -->
+  @if (transmissionSuccess()) {
+    <div class="toast toast--success" role="alert">
+      <span class="material-symbols-outlined">check_circle</span>
+      <p class="toast__msg whitespace-nowrap">{{ transmissionSuccess() }}</p>
+      <button class="toast__close" (click)="dismissNotification()" aria-label="Fermer">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+  }
+  @if (transmissionError()) {
+    <div class="toast toast--error" role="alert">
+      <span class="material-symbols-outlined">error</span>
+      <p class="toast__msg">{{ transmissionError() }}</p>
+      <button class="toast__close" (click)="dismissNotification()" aria-label="Fermer">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       EN-TÊTE — Méta-données du Bordereau RMAN
+  ════════════════════════════════════════════════════════════════════ -->
+  <header class="studio-header">
+    <div class="studio-header__left">
+      <div class="header-badge">
+        <span class="material-symbols-outlined header-badge__icon">sync_alt</span>
+        <span class="header-badge__label whitespace-nowrap">DHIS2 Studio RMAN</span>
+      </div>
+      <div class="header-meta">
+        <h1 class="header-meta__title text-balance">
+          Exports DHIS2 &amp; Registres Nationaux
+        </h1>
+        @if (!loading() && overview()) {
+          <p class="header-meta__subtitle">
+            Bordereau&nbsp;<span class="header-meta__uuid">{{ overview()!.uuidBordereau }}</span>
+            ·&nbsp;{{ overview()!.periodeMoisAnnee }}
+            ·&nbsp;Instance&nbsp;<strong>{{ overview()!.instanceVersion }}</strong>
+          </p>
+        }
+      </div>
+    </div>
+
+    <div class="studio-header__right">
+      @if (!loading() && overview()) {
+        <div class="sync-pill">
+          <span class="sync-pill__dot sync-pill__dot--online"></span>
+          <span class="sync-pill__text whitespace-nowrap">Sync. il y a {{ overview()!.dernierSyncMinutes }}&nbsp;min</span>
+        </div>
+        <div class="consolidation-pill whitespace-nowrap">
+          <span class="material-symbols-outlined">domain</span>
+          {{ overview()!.consolidationRecu }}/{{ overview()!.consolidationTotal }} structures
+          · {{ overview()!.consolidationPourcent | number:'1.0-0' }}%
+        </div>
+      } @else if (loading()) {
+        <div class="skeleton-pill"></div>
+        <div class="skeleton-pill skeleton-pill--sm"></div>
+      }
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       LOADING
+  ════════════════════════════════════════════════════════════════════ -->
+  @if (loading()) {
+    <div class="loading-grid">
+      <div class="skeleton-kpi" *ngFor="let i of [1,2,3,4]"></div>
+    </div>
+    <div class="skeleton-chart"></div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ERROR
+  ════════════════════════════════════════════════════════════════════ -->
+  @if (error() && !loading()) {
+    <div class="error-state">
+      <span class="material-symbols-outlined error-state__icon">cloud_off</span>
+      <p class="error-state__title text-balance">Connexion DHIS2 indisponible</p>
+      <p class="error-state__desc text-pretty">{{ error() }}</p>
+      <button class="btn btn--secondary whitespace-nowrap" (click)="chargerDonnees()">
+        <span class="material-symbols-outlined">refresh</span>
+        Réessayer
+      </button>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTENU PRINCIPAL
+  ════════════════════════════════════════════════════════════════════ -->
+  @if (!loading() && !error() && overview()) {
+
+    <!-- ─── BENTO ROW 1 : 4 KPI CARDS ─────────────────────────────── -->
+    <div class="kpi-grid">
+      @for (kpi of kpisAsList(); track kpi.code) {
+        <article class="kpi-card {{ getKpiThemeClass(kpi.couleurTheme) }}">
+          <div class="kpi-card__top">
+            <span class="kpi-card__icon material-symbols-outlined" aria-hidden="true">{{ kpi.icone }}</span>
+            @if (kpi.variationPourcent) {
+              <span class="kpi-badge whitespace-nowrap"
+                    [class.kpi-badge--up]="kpi.variationPositive"
+                    [class.kpi-badge--neutral]="!kpi.variationPositive">
+                {{ kpi.variationPourcent }}
+              </span>
+            }
+          </div>
+
+          <div class="kpi-card__value">{{ kpi.valeurFormatee }}</div>
+          <div class="kpi-card__label text-balance">{{ kpi.libelle }}</div>
+          <div class="kpi-card__sub text-pretty">{{ kpi.sousTitre }}</div>
+
+          <!-- Sparkline SVG -->
+          @if (kpi.sparklinePoints && kpi.sparklinePoints.length > 1) {
+            <svg class="kpi-spark" viewBox="0 0 80 28" preserveAspectRatio="none" aria-hidden="true">
+              <polyline
+                [attr.points]="getSparklinePolyline(kpi.sparklinePoints)"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          }
+        </article>
+      }
+    </div>
+
+    <!-- ─── BENTO ROW 2 : HISTOGRAM + SPHERE ──────────────────────── -->
+    <div class="row-analytics">
+
+      <!-- Histogramme Chart.js -->
+      <section class="card card--chart">
+        <div class="card__header">
+          <div class="card__title-group">
+            <span class="material-symbols-outlined card__icon">bar_chart</span>
+            <div>
+              <h2 class="card__title text-balance">Évolution des Dépistages MAS/MAM</h2>
+              <p class="card__subtitle text-pretty">Janv — Oct 2024 · District Sanitaire Dakar Ouest</p>
+            </div>
+          </div>
+          <span class="badge badge--teal whitespace-nowrap">Données consolidées DHIS2</span>
+        </div>
+        <div class="chart-wrapper">
+          <canvas #histogramCanvas></canvas>
+        </div>
+      </section>
+
+      <!-- SPHERE Standards -->
+      <section class="card card--sphere">
+        <div class="card__header">
+          <div class="card__title-group">
+            <span class="material-symbols-outlined card__icon">verified</span>
+            <div>
+              <h2 class="card__title text-balance">Standards Humanitaires SPHERE</h2>
+              <p class="card__subtitle">OMS · UNICEF · ACF · Normes 2024</p>
+            </div>
+          </div>
+          <span class="badge badge--emerald whitespace-nowrap">3/3 Conformes</span>
+        </div>
+
+        <div class="sphere-gauges">
+          @for (ind of overview()!.indicateursSphere; track ind.code) {
+            <div class="sphere-gauge">
+              <svg class="sphere-svg" viewBox="0 0 80 80" [attr.aria-label]="ind.libelle + ' : ' + ind.valeurPourcent + '%'">
+                <!-- Track -->
+                <circle cx="40" cy="40" r="30" fill="none" stroke="#1e293b" stroke-width="7"/>
+                <!-- Progress -->
+                <circle
+                  cx="40" cy="40" r="30"
+                  fill="none"
+                  [attr.stroke]="getSphereStrokeColor(ind)"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="getSphereStrokeDash(ind)"
+                  stroke-dashoffset="0"
+                  transform="rotate(-90 40 40)"
+                />
+                <!-- Value text -->
+                <text x="40" y="44" text-anchor="middle" class="sphere-svg__val" dominant-baseline="middle">
+                  {{ ind.valeurPourcent }}%
+                </text>
+              </svg>
+              <div class="sphere-info">
+                <p class="sphere-info__label text-balance">{{ ind.libelle }}</p>
+                <p class="sphere-info__threshold whitespace-nowrap">{{ ind.libelleSeuil }}</p>
+                <span class="badge badge--{{ ind.respecteNorme ? 'emerald' : 'red' }} whitespace-nowrap">
+                  <span class="material-symbols-outlined" style="font-size:12px">
+                    {{ ind.respecteNorme ? 'check_circle' : 'error' }}
+                  </span>
+                  {{ ind.respecteNorme ? 'Conforme' : 'Non conforme' }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ─── BENTO ROW 3 : OBJECTIFS PRN + ARCHIVES ────────────────── -->
+    <div class="row-bottom">
+
+      <!-- Objectifs PRN -->
+      <section class="card card--prn">
+        <div class="card__header">
+          <div class="card__title-group">
+            <span class="material-symbols-outlined card__icon">flag</span>
+            <div>
+              <h2 class="card__title text-balance">Objectifs PRN Nationaux</h2>
+              <p class="card__subtitle">Cibles annuelles MSAS · YTD 2024</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="prn-list">
+          @for (prn of overview()!.objectifsPrn; track prn.code) {
+            <div class="prn-row">
+              <div class="prn-row__header">
+                <p class="prn-row__label text-pretty">{{ prn.libelle }}</p>
+                <div class="prn-row__badges">
+                  <span class="badge badge--{{ prn.badgeCouleur }} whitespace-nowrap">
+                    {{ prn.statut === 'SURPERFORMÉ' ? '↑' : prn.statut === 'ÉCART' ? '↓' : '●' }}
+                    {{ prn.ecartTexte }}
+                  </span>
+                  <span class="prn-taux whitespace-nowrap">
+                    {{ prn.tauxActuel | number:'1.1-1' }}%
+                    <span class="prn-cible">/ {{ prn.cibleTaux }}% cible</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="prn-bar">
+                <div class="prn-bar__track">
+                  <div class="prn-bar__fill"
+                       [style.width]="getPrnProgressWidth(prn)"
+                       [style.background]="getPrnBarColor(prn)">
+                  </div>
+                  <!-- Cible marker -->
+                  <div class="prn-bar__marker"
+                       [style.left]="(prn.cibleTaux) + '%'"
+                       title="Cible : {{ prn.cibleTaux }}%">
+                  </div>
+                </div>
+              </div>
+
+              @if (prn.noteRattrapage) {
+                <p class="prn-row__note text-pretty">
+                  <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">campaign</span>
+                  {{ prn.noteRattrapage }}
+                </p>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Archives Bordereaux -->
+      <section class="card card--archives">
+        <div class="card__header">
+          <div class="card__title-group">
+            <span class="material-symbols-outlined card__icon">archive</span>
+            <div>
+              <h2 class="card__title text-balance">Bordereaux RMAN Archivés</h2>
+              <p class="card__subtitle">Conservation 10 ans · Directive MSAS</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="archives-list">
+          @for (arc of overview()!.archivesBordereaux; track arc.id) {
+            <div class="archive-row">
+              <div class="archive-row__left">
+                <span class="archive-icon material-symbols-outlined">receipt_long</span>
+                <div>
+                  <p class="archive-row__mois whitespace-nowrap">{{ arc.moisAnnee }}</p>
+                  <p class="archive-row__accuse whitespace-nowrap">{{ arc.numeroAccuse }}</p>
+                </div>
+              </div>
+              <div class="archive-row__right">
+                <div class="archive-meta">
+                  <span class="archive-meta__date whitespace-nowrap">Cloture : {{ arc.dateClotureFormatee }}</span>
+                  <span class="archive-hash" title="{{ arc.hashSha256 }}">
+                    SHA-256 : {{ arc.hashSha256.substring(0, 16) }}…
+                  </span>
+                </div>
+                <span class="badge badge--{{ arc.statut === 'VALIDE' ? 'emerald' : 'amber' }} whitespace-nowrap">
+                  <span class="material-symbols-outlined" style="font-size:12px">
+                    {{ arc.statut === 'VALIDE' ? 'verified' : 'pending' }}
+                  </span>
+                  {{ arc.statut }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- SHA-256 empreinte du bordereau courant -->
+        @if (overview()!.empreinteSha256) {
+          <div class="hash-footer">
+            <span class="material-symbols-outlined hash-footer__icon">fingerprint</span>
+            <div>
+              <p class="hash-footer__label">Empreinte SHA-256 du bordereau courant</p>
+              <p class="hash-footer__value">{{ overview()!.empreinteSha256 }}</p>
+            </div>
+          </div>
+        }
+      </section>
+
+    </div>
+
+  } <!-- end @if overview -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ACTION BAR — Dockée en bas de page
+  ════════════════════════════════════════════════════════════════════ -->
+  <div class="action-bar" role="toolbar" aria-label="Actions d'export DHIS2">
+    <div class="action-bar__inner">
+
+      <!-- Section : Télétransmission -->
+      <div class="action-group">
+        <p class="action-group__label">Télétransmission Officielle</p>
+        <button
+          class="btn btn--primary whitespace-nowrap"
+          [disabled]="transmissionLoading() || loading()"
+          (click)="teletransmettre()"
+        >
+          @if (transmissionLoading()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Transmission…
+          } @else {
+            <span class="material-symbols-outlined">send</span>
+            Transmettre à DHIS2 MSAS
+          }
+        </button>
+      </div>
+
+      <div class="action-separator" aria-hidden="true"></div>
+
+      <!-- Section : Exports fichiers -->
+      <div class="action-group">
+        <p class="action-group__label">Export Données</p>
+        <div class="btn-cluster">
+          <button class="btn btn--secondary whitespace-nowrap" [disabled]="exportLoading()" (click)="exporterFichier('csv')">
+            <span class="material-symbols-outlined">table_chart</span>
+            CSV
+          </button>
+          <button class="btn btn--secondary whitespace-nowrap" [disabled]="exportLoading()" (click)="exporterFichier('xml')">
+            <span class="material-symbols-outlined">code</span>
+            XML
+          </button>
+          <button class="btn btn--secondary whitespace-nowrap" [disabled]="exportLoading()" (click)="exporterFichier('json')">
+            <span class="material-symbols-outlined">data_object</span>
+            JSON
+          </button>
+        </div>
+      </div>
+
+      <div class="action-separator" aria-hidden="true"></div>
+
+      <!-- Section : PDF certifié -->
+      <div class="action-group">
+        <p class="action-group__label">Bordereau Certifié</p>
+        <button class="btn btn--ghost whitespace-nowrap" [disabled]="pdfLoading()" (click)="genererPdf()">
+          @if (pdfLoading()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Génération PDF…
+          } @else {
+            <span class="material-symbols-outlined">picture_as_pdf</span>
+            Bordereau PDF · MSAS
+          }
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</section>

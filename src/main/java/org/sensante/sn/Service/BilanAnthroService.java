@@ -24,6 +24,10 @@ public class BilanAnthroService {
         return bilanRepository.findAll();
     }
 
+    public List<BilanAntro> getBilansByEnfantId(Long enfantId) {
+        return bilanRepository.findByEnfantEnfantIdOrderByDateBilanAsc(enfantId);
+    }
+
     public BilanAntro getBilanById(Long id) {
         return bilanRepository.findById(id)
                 .orElseThrow(() -> new RessourceNonTrouveException("Bilan anthropométrique non trouvé avec l'id : " + id));

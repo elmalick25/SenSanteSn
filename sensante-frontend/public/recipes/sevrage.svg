@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient deep CNDN emerald & gold -->
+    <linearGradient id="bgGradSevrage" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="45%" stop-color="#065f46"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+
+    <!-- Bowl Ceramic Deep Slate & Pearl White -->
+    <linearGradient id="bowlGradSevrage" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+
+    <!-- Composite Flour Cream (Mil 60% + Soja/Niébé 25% + Arachide 15%) -->
+    <radialGradient id="porridgeGradSevrage" cx="48%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="35%" stop-color="#fde68a"/>
+      <stop offset="75%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </radialGradient>
+
+    <!-- Shadow -->
+    <filter id="softShadowSevrage" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#022c22" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Ambient Backdrop -->
+  <rect width="600" height="450" fill="url(#bgGradSevrage)"/>
+  
+  <!-- Sacred Geometry - Senegal Nutritional Growth Circles -->
+  <g opacity="0.08" stroke="#ffffff" stroke-width="1.5" fill="none">
+    <circle cx="300" cy="225" r="170"/>
+    <circle cx="300" cy="225" r="210"/>
+    <circle cx="300" cy="225" r="245"/>
+    <polygon points="300,45 340,110 260,110"/>
+    <polygon points="120,225 180,260 180,190"/>
+    <polygon points="480,225 420,260 420,190"/>
+  </g>
+
+  <!-- Shadow Base -->
+  <ellipse cx="300" cy="360" rx="190" ry="32" fill="#022c22" opacity="0.5" filter="url(#softShadowSevrage)"/>
+
+  <!-- Steaming Vapor Waves -->
+  <g opacity="0.4" stroke="#fef3c7" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M255 135 Q245 95 265 65 Q280 40 270 15">
+      <animate attributeName="d" dur="3.6s" repeatCount="indefinite"
+        values="M255 135 Q245 95 265 65 Q280 40 270 15; M255 135 Q265 95 250 65 Q240 40 260 15; M255 135 Q245 95 265 65 Q280 40 270 15"/>
+    </path>
+    <path d="M305 125 Q320 85 300 55 Q290 30 310 10">
+      <animate attributeName="d" dur="4.0s" repeatCount="indefinite"
+        values="M305 125 Q320 85 300 55 Q290 30 310 10; M305 125 Q295 85 315 55 Q325 30 305 10; M305 125 Q320 85 300 55 Q290 30 310 10"/>
+    </path>
+    <path d="M355 135 Q370 100 350 70 Q340 45 355 20">
+      <animate attributeName="d" dur="4.4s" repeatCount="indefinite"
+        values="M355 135 Q370 100 350 70 Q340 45 355 20; M355 135 Q345 100 365 70 Q375 45 350 20; M355 135 Q370 100 350 70 Q340 45 355 20"/>
+    </path>
+  </g>
+
+  <!-- Ceramic Bowl Outer Body -->
+  <path d="M125 210 C130 330, 210 375, 300 375 C390 375, 470 330, 475 210 Z" fill="url(#bowlGradSevrage)" filter="url(#softShadowSevrage)"/>
+  <!-- Rim Lip -->
+  <ellipse cx="300" cy="210" rx="175" ry="48" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <ellipse cx="300" cy="210" rx="165" ry="43" fill="#f1f5f9"/>
+
+  <!-- Composite Porridge Surface (Rich Smooth Texture) -->
+  <ellipse cx="300" cy="214" rx="160" ry="40" fill="url(#porridgeGradSevrage)"/>
+
+  <!-- Golden Arachide Puree & Oil Core -->
+  <path d="M215 216 C245 236, 335 236, 375 215 C345 198, 255 198, 215 216 Z" fill="#fbbf24" opacity="0.65"/>
+  <ellipse cx="295" cy="214" rx="55" ry="16" fill="#fef08a" opacity="0.8"/>
+
+  <!-- Grain & Seed Trilogy Sprinkle -->
+  <!-- Millet Grains (Tiny Golden Spheres) -->
+  <g fill="#fef08a" stroke="#d97706" stroke-width="0.5">
+    <circle cx="255" cy="212" r="3"/>
+    <circle cx="265" cy="216" r="3.5"/>
+    <circle cx="280" cy="210" r="3"/>
+    <circle cx="320" cy="211" r="3.5"/>
+    <circle cx="335" cy="215" r="3"/>
+    <circle cx="345" cy="209" r="2.8"/>
+  </g>
+
+  <!-- Roasted Niébé / Soja Beans (Oval Nodes) -->
+  <g fill="#92400e" stroke="#78350f" stroke-width="0.8">
+    <ellipse cx="245" cy="222" rx="5.5" ry="3.5" transform="rotate(25 245 222)"/>
+    <ellipse cx="270" cy="225" rx="6" ry="3.8" transform="rotate(-15 270 225)"/>
+    <ellipse cx="330" cy="224" rx="5.8" ry="3.5" transform="rotate(35 330 224)"/>
+    <ellipse cx="355" cy="219" rx="5" ry="3.2" transform="rotate(-20 355 219)"/>
+  </g>
+
+  <!-- Crushed Peanuts (Arachides pilées) -->
+  <g fill="#f59e0b" stroke="#b45309" stroke-width="0.7">
+    <ellipse cx="290" cy="222" rx="6" ry="3.5" transform="rotate(10 290 222)"/>
+    <ellipse cx="310" cy="220" rx="5" ry="3" transform="rotate(-30 310 220)"/>
+  </g>
+
+  <!-- Wooden Spoon Resting on Rim -->
+  <g filter="url(#softShadowSevrage)">
+    <path d="M370 215 L492 320 C500 328, 512 325, 517 318 C522 310, 518 298, 508 290 L397 195 Z" fill="#7c2d12"/>
+    <path d="M370 215 L492 320 C497 325, 506 322, 510 317 C514 312, 511 303, 504 297 L397 195 Z" fill="#9a3412" opacity="0.8"/>
+  </g>
+
+  <!-- Title Pill Badge -->
+  <g transform="translate(30, 30)">
+    <rect width="215" height="34" rx="17" fill="#064e3b" opacity="0.9" stroke="#34d399" stroke-width="1.5"/>
+    <text x="22" y="22" font-family="'Plus Jakarta Sans', Inter, sans-serif" font-size="12" font-weight="700" fill="#a7f3d0" letter-spacing="0.5">FARINE SEVRAGE 6–24M</text>
+  </g>
+
+  <!-- 3-Component Ratio Badge -->
+  <g transform="translate(390, 30)">
+    <rect width="180" height="34" rx="17" fill="#064e3b" opacity="0.9" stroke="#fcd34d" stroke-width="1.5"/>
+    <circle cx="22" cy="17" r="6" fill="#f59e0b"/>
+    <text x="36" y="22" font-family="'Plus Jakarta Sans', Inter, sans-serif" font-size="11" font-weight="700" fill="#fef08a">TRILOGIE MIL 60%</text>
+  </g>
+</svg>

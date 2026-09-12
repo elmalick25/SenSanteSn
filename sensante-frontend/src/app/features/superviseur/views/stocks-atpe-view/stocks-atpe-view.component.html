@@ -1,0 +1,796 @@
+<div class="min-h-screen bg-[#f8f9ff] text-slate-900 pb-16 font-sans">
+  <!-- TOAST NOTIFICATION -->
+  @if (toastMessage(); as message) {
+    <div class="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#003426] text-white px-5 py-3.5 rounded-xl shadow-2xl border border-emerald-400/30 animate-in fade-in slide-in-from-bottom-5">
+      <span class="material-symbols-outlined text-emerald-400 text-xl">check_circle</span>
+      <span class="text-sm font-medium whitespace-nowrap">{{ message }}</span>
+    </div>
+  }
+
+  <!-- TOP HEADER OPÉRATIONNEL -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-6 py-4 transition-all">
+    <div class="max-w-[1720px] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#003426] to-[#006c4a] flex items-center justify-center text-white shadow-lg shadow-emerald-900/20 flex-shrink-0">
+          <span class="material-symbols-outlined text-2xl">inventory_2</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <span class="text-xs font-bold uppercase tracking-wider text-[#006c4a]">SenSanté Commandement</span>
+            <span class="text-slate-300">/</span>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900 text-balance">
+              Stocks ATPE & Intrants Nutritionnels
+            </h1>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap flex-shrink-0">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              DHIS2 & SIGL Live
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5 text-pretty">
+            District Dakar Ouest • Télémétrie logistique continue, régulation active des ruptures et péréquation d'urgence.
+          </p>
+        </div>
+      </div>
+
+      <!-- ACTIONS & VIGILANCE BADGES -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-medium whitespace-nowrap flex-shrink-0">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          <span>Autonomie Moyenne : <strong class="font-bold">14.2 jours</strong></span>
+        </div>
+
+        <div class="hidden xl:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-300 rounded-xl text-xs font-medium whitespace-nowrap flex-shrink-0">
+          <span class="material-symbols-outlined text-amber-600 text-sm">warning</span>
+          <span><strong>4 Postes</strong> en Vigilance (&lt; 7j)</span>
+        </div>
+
+        <button
+          (click)="scrollToTransferConsole()"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition-all whitespace-nowrap flex-shrink-0 active:scale-95"
+        >
+          <span class="material-symbols-outlined text-base text-[#006c4a]">swap_horiz</span>
+          <span>Transfert Inter-Postes</span>
+        </button>
+
+        <button
+          (click)="commanderReapproPna()"
+          [disabled]="actionLoading()"
+          class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#003426] hover:bg-[#0f4c3a] text-white text-xs font-semibold rounded-xl shadow-md shadow-emerald-950/20 transition-all whitespace-nowrap flex-shrink-0 active:scale-95 disabled:opacity-50"
+        >
+          <span class="material-symbols-outlined text-base">local_shipping</span>
+          <span>Ordre Réappro PNA</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENU PRINCIPAL -->
+  <main class="max-w-[1720px] mx-auto px-6 pt-6 space-y-6">
+
+    <!-- 1. LOADING STATE -->
+    @if (loading()) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 animate-pulse">
+        @for (i of [1,2,3,4]; track i) {
+          <div class="h-28 bg-white rounded-2xl border border-slate-200 p-4">
+            <div class="w-1/2 h-4 bg-slate-200 rounded mb-3"></div>
+            <div class="w-3/4 h-8 bg-slate-100 rounded"></div>
+          </div>
+        }
+      </div>
+      <div class="h-96 bg-white rounded-2xl border border-slate-200 animate-pulse"></div>
+    }
+
+    <!-- 2. ERROR STATE -->
+    @if (error(); as err) {
+      <div class="bg-red-50 border border-red-200 rounded-2xl p-6 text-center space-y-3">
+        <span class="material-symbols-outlined text-red-500 text-4xl">error_outline</span>
+        <h3 class="text-base font-bold text-red-800 text-balance">Erreur Télémétrique de Stock</h3>
+        <p class="text-sm text-red-600 text-pretty">{{ err }}</p>
+        <button
+          (click)="loadData()"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 transition whitespace-nowrap"
+        >
+          <span class="material-symbols-outlined text-sm">refresh</span>
+          Réessayer
+        </button>
+      </div>
+    }
+
+    <!-- 3. SUCCESS DATA DISPLAY -->
+    @if (!loading() && overview(); as ov) {
+
+      <!-- TOP EXECUTIVE KPIS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <!-- KPI 1 : STOCK TOTAL PLUMPY'NUT -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500">
+            <span class="text-xs font-semibold uppercase tracking-wider whitespace-nowrap">Stock Total Plumpy'Nut</span>
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-lg">inventory</span>
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="flex items-baseline gap-2">
+              <span class="text-3xl font-extrabold text-[#003426] tracking-tight">{{ ov.totalCartonsPlumpyNut | number }}</span>
+              <span class="text-xs font-medium text-slate-500">cartons ({{ ov.autonomieMoyenneJours }} jours)</span>
+            </div>
+            <div class="mt-2 flex items-center justify-between">
+              <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 whitespace-nowrap flex-shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Stock globalement sécuritaire
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">Seuil min : 1 000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 2 : ALERTE RUPTURE IMMINENTE -->
+        <div class="bg-white rounded-2xl border-l-4 border-l-red-600 border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+          <div class="flex items-center justify-between text-red-600">
+            <span class="text-xs font-bold uppercase tracking-wider whitespace-nowrap">Alerte Rupture Imminente</span>
+            <div class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0 animate-pulse">
+              <span class="material-symbols-outlined text-lg">report_problem</span>
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="flex items-baseline gap-2">
+              <span class="text-3xl font-extrabold text-red-600 tracking-tight">{{ ov.structuresEnAlerteRupture }}</span>
+              <span class="text-xs font-semibold text-red-600">structures &lt; 3 jours</span>
+            </div>
+            <p class="mt-2 text-[11px] text-slate-600 font-medium text-pretty truncate">
+              <span class="text-red-600 font-bold">●</span> Poste Médina Sec. 3 (2j) &amp; Ouakam O. (2j)
+            </p>
+          </div>
+        </div>
+
+        <!-- KPI 3 : DÉBIT DISTRIBUTION QUOTIDIEN -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500">
+            <span class="text-xs font-semibold uppercase tracking-wider whitespace-nowrap">Débit Distribution 24h</span>
+            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-lg">sync_alt</span>
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="flex items-baseline gap-2">
+              <span class="text-3xl font-extrabold text-[#003426] tracking-tight">{{ ov.debitDistributionQuotidien }}</span>
+              <span class="text-xs font-medium text-slate-500">cartons / 24h</span>
+            </div>
+            <div class="mt-2 flex items-center justify-between">
+              <span class="inline-flex items-center gap-1 text-[11px] text-emerald-700">
+                <span class="material-symbols-outlined text-xs">trending_down</span> {{ ov.evolutionDebitPourcent }}% besoin stabilisé
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">10 structures</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 4 : EN TRANSIT PNA & TAMPON -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500">
+            <span class="text-xs font-semibold uppercase tracking-wider whitespace-nowrap">En Transit PNA &amp; Tampon</span>
+            <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-lg">local_shipping</span>
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="flex items-baseline gap-2">
+              <span class="text-3xl font-extrabold text-[#006c4a] tracking-tight">{{ ov.cartonsEnTransitPna }}</span>
+              <span class="text-xs font-medium text-slate-500">cartons commandés</span>
+            </div>
+            <div class="mt-2 flex items-center justify-between">
+              <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 whitespace-nowrap flex-shrink-0">
+                <span class="material-symbols-outlined text-xs">schedule</span> Arrivée : <strong>{{ ov.dateLivraisonPrevuePna }}</strong>
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">{{ ov.bordereauLivraisonPna }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPOSANT 1 : DIAGRAMME DE FLUX LOGISTIQUE (SANKEY SVG) -->
+      <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-emerald-600"></div>
+              <h2 class="text-base font-bold text-slate-900 text-balance">
+                Diagramme de Flux Logistique (Sankey des Transferts ATPE)
+              </h2>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-[#006c4a] border border-emerald-200 whitespace-nowrap flex-shrink-0">
+                Flux Plumpy'Nut (Volumes en cartons)
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 text-pretty">
+              Traçabilité complète : Origine Nationale &gt; Magasin Régulateur District &gt; Pôles Pivot &gt; Postes Périphériques.
+            </p>
+          </div>
+          <div class="flex items-center gap-3 text-xs flex-wrap">
+            <span class="flex items-center gap-1 text-slate-600 whitespace-nowrap">
+              <span class="w-3 h-2 rounded bg-[#003426] inline-block"></span> Approvisionnement Central
+            </span>
+            <span class="flex items-center gap-1 text-slate-600 whitespace-nowrap">
+              <span class="w-3 h-2 rounded bg-[#006c4a] inline-block"></span> Dispatch Régulateur
+            </span>
+            <span class="flex items-center gap-1 text-slate-600 whitespace-nowrap">
+              <span class="w-3 h-2 rounded bg-amber-500 inline-block"></span> Flux de Rééquilibrage
+            </span>
+          </div>
+        </div>
+
+        <!-- SVG SANKEY INTERACTIF -->
+        <div class="w-full overflow-x-auto custom-scrollbar">
+          <div class="min-w-[1020px] h-[360px] relative">
+            <svg class="w-full h-full" viewBox="0 0 1020 360">
+              <defs>
+                <linearGradient id="gradPnaDepot" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#003426" stop-opacity="0.4"></stop>
+                  <stop offset="100%" stop-color="#006c4a" stop-opacity="0.45"></stop>
+                </linearGradient>
+                <linearGradient id="gradDepotMedina" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#006c4a" stop-opacity="0.45"></stop>
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0.4"></stop>
+                </linearGradient>
+                <linearGradient id="gradDepotFann" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#006c4a" stop-opacity="0.45"></stop>
+                  <stop offset="100%" stop-color="#0284c7" stop-opacity="0.4"></stop>
+                </linearGradient>
+                <linearGradient id="gradDepotOuakam" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#006c4a" stop-opacity="0.45"></stop>
+                  <stop offset="100%" stop-color="#6366f1" stop-opacity="0.4"></stop>
+                </linearGradient>
+                <linearGradient id="gradMedinaPosteMed" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.4"></stop>
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0.5"></stop>
+                </linearGradient>
+                <linearGradient id="gradMedinaGueule" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.4"></stop>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.45"></stop>
+                </linearGradient>
+                <linearGradient id="gradFannHock" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#0284c7" stop-opacity="0.4"></stop>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.45"></stop>
+                </linearGradient>
+                <linearGradient id="gradOuakamOuest" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#6366f1" stop-opacity="0.4"></stop>
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0.5"></stop>
+                </linearGradient>
+                <linearGradient id="gradOuakamNgor" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#6366f1" stop-opacity="0.4"></stop>
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0.4"></stop>
+                </linearGradient>
+                <linearGradient id="gradOuakamYoff" x1="0%" x2="100%" y1="0%" y2="0%">
+                  <stop offset="0%" stop-color="#6366f1" stop-opacity="0.4"></stop>
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0.4"></stop>
+                </linearGradient>
+              </defs>
+
+              <!-- Colonnes de repère -->
+              <line stroke="#f1f5f9" stroke-dasharray="3 3" x1="150" x2="150" y1="20" y2="340"></line>
+              <line stroke="#f1f5f9" stroke-dasharray="3 3" x1="420" x2="420" y1="20" y2="340"></line>
+              <line stroke="#f1f5f9" stroke-dasharray="3 3" x1="720" x2="720" y1="20" y2="340"></line>
+              <text fill="#64748b" font-size="11" font-weight="600" text-anchor="middle" x="60" y="22">1. SOURCE NATIONALE</text>
+              <text fill="#64748b" font-size="11" font-weight="600" text-anchor="middle" x="280" y="22">2. MAGASIN TAMPON DISTRICT</text>
+              <text fill="#64748b" font-size="11" font-weight="600" text-anchor="middle" x="560" y="22">3. PÔLES PIVOTS (HUBS)</text>
+              <text fill="#64748b" font-size="11" font-weight="600" text-anchor="middle" x="880" y="22">4. STRUCTURES DE SOINS FINALISÉES</text>
+
+              <!-- Rubans Bézier -->
+              <path class="sankey-link" d="M 120 170 C 190 170, 210 170, 270 170" fill="none" stroke="url(#gradPnaDepot)" stroke-linecap="round" stroke-width="64"></path>
+              <path class="sankey-link" d="M 330 145 C 420 145, 450 95, 530 95" fill="none" stroke="url(#gradDepotMedina)" stroke-width="26"></path>
+              <path class="sankey-link" d="M 330 165 C 420 165, 450 175, 530 175" fill="none" stroke="url(#gradDepotFann)" stroke-width="18"></path>
+              <path class="sankey-link" d="M 330 188 C 420 188, 450 255, 530 255" fill="none" stroke="url(#gradDepotOuakam)" stroke-width="22"></path>
+              <path class="sankey-link" d="M 610 80 C 700 80, 750 65, 830 65" fill="none" stroke="url(#gradMedinaPosteMed)" stroke-width="14"></path>
+              <path class="sankey-link" d="M 610 105 C 700 105, 750 120, 830 120" fill="none" stroke="url(#gradMedinaGueule)" stroke-width="12"></path>
+              <path class="sankey-link" d="M 610 175 C 700 175, 750 180, 830 180" fill="none" stroke="url(#gradFannHock)" stroke-width="14"></path>
+              <path class="sankey-link" d="M 610 240 C 700 240, 750 235, 830 235" fill="none" stroke="url(#gradOuakamOuest)" stroke-width="12"></path>
+              <path class="sankey-link" d="M 610 258 C 700 258, 750 285, 830 285" fill="none" stroke="url(#gradOuakamNgor)" stroke-width="10"></path>
+              <path class="sankey-link" d="M 610 272 C 700 272, 750 330, 830 330" fill="none" stroke="url(#gradOuakamYoff)" stroke-width="11"></path>
+
+              <!-- Nœud 1 : PNA -->
+              <g class="cursor-pointer" transform="translate(15, 128)">
+                <rect fill="#003426" height="84" rx="8" stroke="#0f4c3a" stroke-width="2" width="105"></rect>
+                <text fill="#b4efd6" font-size="10" font-weight="700" x="10" y="24">PNA NATIONALE</text>
+                <text fill="#ffffff" font-size="13" font-weight="700" x="10" y="44">Entrepôt PNA</text>
+                <text fill="#82bba4" font-size="10" x="10" y="62">750 ctns alloués</text>
+                <text fill="#82f5c1" font-size="9" font-weight="600" x="10" y="74">+300 ctns transit</text>
+              </g>
+
+              <!-- Nœud 2 : Dépôt Central Fann -->
+              <g class="cursor-pointer" transform="translate(255, 110)">
+                <rect fill="#006c4a" height="120" rx="8" stroke="#82f5c1" stroke-width="1.5" width="115"></rect>
+                <text fill="#b4efd6" font-size="10" font-weight="700" x="10" y="22">RÉGULATION TAMPON</text>
+                <text fill="#ffffff" font-size="12" font-weight="700" x="10" y="40">Dépôt Central Fann</text>
+                <text fill="#e6fffa" font-size="11" font-weight="600" x="10" y="58">Stock : 450 ctns</text>
+                <text fill="#b4efd6" font-size="10" x="10" y="74">Autonomie : 28 j</text>
+                <rect fill="#003426" height="18" rx="3" width="95" x="10" y="86"></rect>
+                <text fill="#82f5c1" font-size="9" font-weight="600" text-anchor="middle" x="57" y="99">Régulation Active</text>
+              </g>
+
+              <!-- Nœuds 3 : Hubs Pivots -->
+              <g class="cursor-pointer" transform="translate(515, 68)">
+                <rect fill="#0f4c3a" height="58" rx="8" stroke="#10b981" stroke-width="1.5" width="125"></rect>
+                <text fill="#ffffff" font-size="11" font-weight="700" x="10" y="20">CS Médina (Hub)</text>
+                <text fill="#82f5c1" font-size="10" font-weight="600" x="10" y="36">220 ctns (24 jours)</text>
+                <text fill="#b4efd6" font-size="9" x="10" y="49">★ Excédent donneur</text>
+              </g>
+
+              <g class="cursor-pointer" transform="translate(515, 148)">
+                <rect fill="#0f4c3a" height="54" rx="8" stroke="#0284c7" stroke-width="1.5" width="125"></rect>
+                <text fill="#ffffff" font-size="11" font-weight="700" x="10" y="19">CHU Fann Pédiatrie</text>
+                <text fill="#93c5fd" font-size="10" font-weight="600" x="10" y="34">110 ctns (17 jours)</text>
+                <text fill="#e2e8f0" font-size="9" x="10" y="47">CRENI Référence</text>
+              </g>
+
+              <g class="cursor-pointer" transform="translate(515, 226)">
+                <rect fill="#0f4c3a" height="58" rx="8" stroke="#6366f1" stroke-width="1.5" width="125"></rect>
+                <text fill="#ffffff" font-size="11" font-weight="700" x="10" y="20">Ouakam Principal</text>
+                <text fill="#c7d2fe" font-size="10" font-weight="600" x="10" y="36">76 ctns (19 jours)</text>
+                <text fill="#82f5c1" font-size="9" x="10" y="49">Pivot Nord-Ouest</text>
+              </g>
+
+              <!-- Nœuds 4 : Postes Périphériques -->
+              <!-- Médina Sec 3 (cliquable pour transfert direct) -->
+              <g class="cursor-pointer" (click)="prefillTransfer('Centre de Santé Médina', 'Poste Médina Secteur 3')" transform="translate(815, 42)">
+                <rect fill="#fef2f2" height="46" rx="6" stroke="#ef4444" stroke-width="2" width="170"></rect>
+                <circle cx="16" cy="18" fill="#ef4444" r="5"></circle>
+                <text fill="#991b1b" font-size="11" font-weight="700" x="28" y="22">Poste Médina Sec. 3</text>
+                <text fill="#dc2626" font-size="10" font-weight="700" x="12" y="38">6 ctns · Autonomie : 2j (CRITIQUE)</text>
+              </g>
+
+              <g class="cursor-pointer" transform="translate(815, 98)">
+                <rect fill="#fffbeb" height="42" rx="6" stroke="#f59e0b" stroke-width="1.5" width="170"></rect>
+                <text fill="#92400e" font-size="11" font-weight="600" x="12" y="18">Poste Gueule Tapée</text>
+                <text fill="#b45309" font-size="10" font-weight="500" x="12" y="33">34 ctns · 13j (Vigilance)</text>
+              </g>
+
+              <g class="cursor-pointer" transform="translate(815, 158)">
+                <rect fill="#fffbeb" height="42" rx="6" stroke="#f59e0b" stroke-width="1.5" width="170"></rect>
+                <text fill="#92400e" font-size="11" font-weight="600" x="12" y="18">CRENAS Fann Hock</text>
+                <text fill="#b45309" font-size="10" font-weight="500" x="12" y="33">42 ctns · 11j (Vigilance)</text>
+              </g>
+
+              <!-- Ouakam Ouest (cliquable pour transfert direct) -->
+              <g class="cursor-pointer" (click)="prefillTransfer('Centre Médical Ouakam Principal', 'Poste Ouakam Ouest')" transform="translate(815, 214)">
+                <rect fill="#fef2f2" height="44" rx="6" stroke="#ef4444" stroke-width="2" width="170"></rect>
+                <circle cx="16" cy="18" fill="#ef4444" r="5"></circle>
+                <text fill="#991b1b" font-size="11" font-weight="700" x="28" y="22">Poste Ouakam Ouest</text>
+                <text fill="#dc2626" font-size="10" font-weight="700" x="12" y="37">5 ctns · Autonomie : 2j (CRITIQUE)</text>
+              </g>
+
+              <g class="cursor-pointer" transform="translate(815, 268)">
+                <rect fill="#f0fdf4" height="38" rx="6" stroke="#10b981" stroke-width="1.5" width="170"></rect>
+                <text fill="#166534" font-size="11" font-weight="600" x="12" y="17">Poste Ngor Village</text>
+                <text fill="#15803d" font-size="10" font-weight="500" x="12" y="30">52 ctns · 18j (Sécuritaire)</text>
+              </g>
+
+              <g class="cursor-pointer" transform="translate(815, 314)">
+                <rect fill="#f0fdf4" height="38" rx="6" stroke="#10b981" stroke-width="1.5" width="170"></rect>
+                <text fill="#166534" font-size="11" font-weight="600" x="12" y="17">Poste Yoff Tonghor</text>
+                <text fill="#15803d" font-size="10" font-weight="500" x="12" y="30">48 ctns · 16j (Sécuritaire)</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+          <span class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[#006c4a] text-sm">lightbulb</span>
+            <em>Astuce superviseur :</em> Cliquez directement sur un poste en rouge pour préremplir l'ordre de transfert de secours.
+          </span>
+          <span class="font-mono text-[11px] text-slate-400">Modèle : Entrepôt Régional SIGL-Sénégal v2.1</span>
+        </div>
+      </section>
+
+      <!-- COMPOSANT 2 : MATRICE THERMIQUE D'AUTONOMIE (HEATMAP 10 SITES × 6 PRODUITS) -->
+      <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col" id="heatmapSection">
+        <div class="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-[#003426]"></div>
+            <div>
+              <h2 class="text-base font-bold text-slate-900 text-balance">
+                Matrice Thermique d'Autonomie (Heatmap Télémétrique)
+              </h2>
+              <p class="text-xs text-slate-500 text-pretty">
+                Cartographie chromatique instantanée des stocks résiduels (10 structures × 6 intrants stratégiques).
+              </p>
+            </div>
+          </div>
+
+          <!-- Légende thermique -->
+          <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+            <span class="text-slate-500 font-normal mr-1">Échelle Jours :</span>
+            <span class="px-2.5 py-1 rounded-lg bg-red-600 text-white flex items-center gap-1 shadow-xs whitespace-nowrap">
+              <span class="material-symbols-outlined text-xs">report</span> &lt; 3j Rupture Imminente
+            </span>
+            <span class="px-2.5 py-1 rounded-lg bg-orange-500 text-white flex items-center gap-1 whitespace-nowrap">
+              <span class="material-symbols-outlined text-xs">warning</span> 3 - 7j Critique
+            </span>
+            <span class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-900 whitespace-nowrap">7 - 14j Vigilance</span>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white whitespace-nowrap">&gt; 14j Sécuritaire</span>
+          </div>
+        </div>
+
+        <!-- TABLEAU HEATMAP -->
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse min-w-[1240px] text-xs">
+            <thead>
+              <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[11px] font-semibold border-b border-slate-100">
+                <th class="py-3 px-4 w-[250px] sticky left-0 z-20 bg-slate-50 shadow-[2px_0_4px_rgba(0,0,0,0.03)] whitespace-nowrap">
+                  Structures Sanitaires du District
+                </th>
+                <th class="py-3 px-2 text-center w-[160px]">
+                  <div class="flex flex-col items-center">
+                    <span class="text-[#003426] font-bold whitespace-nowrap">Plumpy'Nut</span>
+                    <span class="text-[10px] text-slate-400 normal-case font-normal whitespace-nowrap">ATPE MAS (cartons)</span>
+                  </div>
+                </th>
+                <th class="py-3 px-2 text-center w-[160px]">
+                  <div class="flex flex-col items-center">
+                    <span class="text-[#003426] font-bold whitespace-nowrap">Plumpy'Sup</span>
+                    <span class="text-[10px] text-slate-400 normal-case font-normal whitespace-nowrap">Supplément MAM (cartons)</span>
+                  </div>
+                </th>
+                <th class="py-3 px-2 text-center w-[160px]">
+                  <div class="flex flex-col items-center">
+                    <span class="text-[#003426] font-bold whitespace-nowrap">CSB++</span>
+                    <span class="text-[10px] text-slate-400 normal-case font-normal whitespace-nowrap">Farine enrichie (sacs 25kg)</span>
+                  </div>
+                </th>
+                <th class="py-3 px-2 text-center w-[160px]">
+                  <div class="flex flex-col items-center">
+                    <span class="text-[#003426] font-bold whitespace-nowrap">Amoxicilline</span>
+                    <span class="text-[10px] text-slate-400 normal-case font-normal whitespace-nowrap">Antibio MAS (boîtes 100)</span>
+                  </div>
+                </th>
+                <th class="py-3 px-2 text-center w-[160px]">
+                  <div class="flex flex-col items-center">
+                    <span class="text-[#003426] font-bold whitespace-nowrap">Vitamine A</span>
+                    <span class="text-[10px] text-slate-400 normal-case font-normal whitespace-nowrap">100k/200k UI (flacons)</span>
+                  </div>
+                </th>
+                <th class="py-3 px-2 text-center w-[160px]">
+                  <div class="flex flex-col items-center">
+                    <span class="text-[#003426] font-bold whitespace-nowrap">TDR Paludisme</span>
+                    <span class="text-[10px] text-slate-400 normal-case font-normal whitespace-nowrap">Kits dépistage (boîtes 25)</span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 text-center w-[100px] whitespace-nowrap">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+              @for (struct of ov.matriceStructures; track struct.structureNom) {
+                <tr
+                  class="hover:bg-slate-50/70 transition-colors"
+                  [ngClass]="{'bg-red-50/40 border-l-4 border-l-red-600': struct.enAlerteRupture}"
+                >
+                  <!-- Nom Structure Figé -->
+                  <td class="py-3 px-4 sticky left-0 z-10 bg-white shadow-[2px_0_4px_rgba(0,0,0,0.02)]">
+                    <div class="flex items-center gap-2">
+                      @if (struct.enAlerteRupture) {
+                        <span class="material-symbols-outlined text-red-600 text-lg animate-pulse">emergency</span>
+                      } @else if (struct.hubDonneur) {
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                      }
+                      <div>
+                        <div class="font-bold text-slate-900" [class.text-red-900]="struct.enAlerteRupture">{{ struct.structureNom }}</div>
+                        <div class="text-[11px]" [class.text-red-600]="struct.enAlerteRupture" [class.text-emerald-700]="struct.hubDonneur && !struct.enAlerteRupture" [class.text-slate-400]="!struct.hubDonneur && !struct.enAlerteRupture">
+                          {{ struct.sousTitre }}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- 6 Intrants -->
+                  @for (stock of struct.stocksIntrants; track stock.codeProduit) {
+                    <td class="p-2 text-center">
+                      <div
+                        class="heat-cell p-2 rounded-xl text-xs font-bold transition-transform hover:scale-105 select-none"
+                        [ngClass]="getCellBadgeClass(stock)"
+                        [title]="stock.nomProduit + ': ' + stock.autonomieJours + ' jours (' + stock.quantiteDisponible + ' ' + stock.uniteMesure + ')'"
+                      >
+                        <div class="text-[12px] leading-tight flex items-center justify-center gap-0.5">
+                          @if (stock.niveauAlerte === 'RUPTURE_IMMINENTE') {
+                            <span class="material-symbols-outlined text-xs">warning</span>
+                          }
+                          {{ stock.autonomieJours }} jours
+                        </div>
+                        <div class="text-[10px] font-normal opacity-90">
+                          {{ stock.quantiteDisponible }} {{ stock.uniteMesure }}
+                        </div>
+                      </div>
+                    </td>
+                  }
+
+                  <!-- Action Bouton -->
+                  <td class="p-2 text-center whitespace-nowrap">
+                    @if (struct.enAlerteRupture) {
+                      <button
+                        (click)="prefillTransfer('Centre de Santé Médina', struct.structureNom)"
+                        class="px-2.5 py-1.5 text-[11px] font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-transform active:scale-95 flex items-center justify-center gap-1 mx-auto whitespace-nowrap"
+                      >
+                        <span class="material-symbols-outlined text-xs">sync_problem</span> Secourir
+                      </button>
+                    } @else if (struct.hubDonneur) {
+                      <button
+                        (click)="prefillTransfer(struct.structureNom, 'Poste Médina Secteur 3')"
+                        class="px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-lg border border-emerald-300 transition-colors whitespace-nowrap"
+                      >
+                        Transférer
+                      </button>
+                    } @else {
+                      <button
+                        (click)="prefillTransfer('Centre de Santé Médina', struct.structureNom)"
+                        class="px-2 py-1 text-[11px] text-slate-500 hover:text-slate-800 rounded-lg border border-slate-200 hover:bg-slate-100 transition whitespace-nowrap"
+                      >
+                        Détail
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- COMPOSANTS 3 & 4 : RADAR CHART RÉSILIENCE + CONSOLE DE TRANSFERT -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+
+        <!-- COMPOSANT 3 : RADAR CHART RÉSILIENCE PAR ZONE (5 COLS) -->
+        <section class="xl:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#006c4a] text-xl">radar</span>
+                <h2 class="text-base font-bold text-slate-900 text-balance">
+                  Résilience Logistique par Zone
+                </h2>
+              </div>
+              <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
+                5 Axes Évaluation
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-2 text-pretty">
+              Comparatif de performance opérationnelle sur les 3 zones sanitaires du district Dakar Ouest.
+            </p>
+
+            <!-- CANVAS RADAR CHART.JS (Standard Règle 13) -->
+            <div class="w-full flex items-center justify-center my-4 h-72">
+              <canvas #resilienceRadarCanvas></canvas>
+            </div>
+
+            <!-- Légende Radar -->
+            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-[#006c4a]"></span>
+                <span class="font-bold text-[#003426] whitespace-nowrap">Zone Médina (88%)</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-[#0284c7]"></span>
+                <span class="font-medium text-slate-700 whitespace-nowrap">Zone Ouakam (75%)</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-[#8b5cf6]"></span>
+                <span class="font-medium text-slate-700 whitespace-nowrap">Zone Fann (78%)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-start gap-2">
+            <span class="material-symbols-outlined text-[#006c4a] text-lg shrink-0 mt-0.5">analytics</span>
+            <p class="text-[11px] text-slate-600 leading-relaxed text-pretty">
+              <strong>Constat d'audit :</strong> La zone Médina présente la meilleure conformité SIGL et stock tampon, ce qui en fait le pivot désigné pour ravitailler les postes en tension critique.
+            </p>
+          </div>
+        </section>
+
+        <!-- COMPOSANT 4 : CONSOLE DE TRANSFERT ET PÉRÉQUATION (7 COLS) -->
+        <section class="xl:col-span-7 bg-white rounded-2xl border-2 border-emerald-600/20 shadow-md p-6 flex flex-col justify-between" id="transferConsole">
+          <div>
+            <!-- Header Console -->
+            <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-[#003426] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                  <span class="material-symbols-outlined text-lg">swap_horiz</span>
+                </div>
+                <div>
+                  <h2 class="text-base font-bold text-slate-900 text-balance">
+                    Console Interactive de Transfert &amp; Péréquation
+                  </h2>
+                  <p class="text-xs text-slate-500 text-pretty">Simulation d'impact instantané sur l'autonomie clinique</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Sécurisation Interactive
+              </span>
+            </div>
+
+            <!-- Formulaire Sélecteurs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Poste Donneur (Excédent)
+                </label>
+                <select
+                  [value]="donorStructure()"
+                  (change)="donorStructure.set($any($event.target).value)"
+                  class="w-full text-xs rounded-xl border-slate-200 bg-slate-50 font-medium py-2 px-3 text-slate-800 focus:bg-white focus:border-[#006c4a] focus:ring-1 focus:ring-[#006c4a]"
+                >
+                  <option value="Centre de Santé Médina">Centre de Santé Médina (24 jours · 220 cartons)</option>
+                  <option value="Dépôt Central Pharmacie">Dépôt Central Pharmacie District (28 jours · 450 cartons)</option>
+                  <option value="Centre Médical Ouakam Principal">Centre Médical Ouakam Principal (19 jours · 76 cartons)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-red-700 mb-1 flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-red-600"></span> Poste Bénéficiaire (Rupture &lt; 3j)
+                </label>
+                <select
+                  [value]="receiverStructure()"
+                  (change)="receiverStructure.set($any($event.target).value)"
+                  class="w-full text-xs rounded-xl border-red-300 bg-red-50/40 font-bold py-2 px-3 text-red-900 focus:bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                >
+                  <option value="Poste Médina Secteur 3">Poste Médina Secteur 3 (2 jours · 6 cartons restants)</option>
+                  <option value="Poste Ouakam Ouest">Poste Ouakam Ouest (2 jours · 5 cartons restants)</option>
+                  <option value="CRENAS Fann Hock">CRENAS Fann Hock (11 jours · 42 cartons)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- CURSEUR SLIDER INTERACTIF -->
+            <div class="mt-5 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-[#003426] flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-base">tune</span>
+                  Volume de Transfert Plumpy'Nut (Cartons) :
+                </span>
+                <span class="text-base font-extrabold text-[#003426] bg-white px-3 py-1 rounded-lg border border-emerald-200 shadow-xs whitespace-nowrap">
+                  {{ transferQuantity() }} cartons
+                </span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="40"
+                step="1"
+                [value]="transferQuantity()"
+                (input)="onSliderChange($event)"
+                class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#003426]"
+              />
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1 font-medium">
+                <span>Min: 5 cartons</span>
+                <span>Recommandé District: 15 ctns</span>
+                <span>Max Régulation: 40 cartons</span>
+              </div>
+            </div>
+
+            <!-- JAUGES COMPARATIVES D'IMPACT EN DIRECT -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+              <!-- Donneur -->
+              <div class="p-4 bg-white rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between text-xs font-semibold text-slate-800">
+                    <span class="truncate">{{ donorStructure() }} (Donneur)</span>
+                    <span class="text-[#006c4a] font-bold whitespace-nowrap">
+                      {{ donorInitialDays() }}j ➔ {{ donorFinalDays() }}j
+                    </span>
+                  </div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full mt-2 overflow-hidden relative">
+                    <div class="bg-emerald-600 h-full transition-all duration-300" [style.width.%]="(donorFinalDays() / 30) * 100"></div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+                  <span class="text-emerald-700 font-semibold flex items-center gap-0.5 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-xs">verified</span> &gt; Seuil Sécuritaire (14j)
+                  </span>
+                  <span class="font-mono text-slate-400 whitespace-nowrap">-{{ transferQuantity() }} ctns</span>
+                </div>
+              </div>
+
+              <!-- Bénéficiaire -->
+              <div class="p-4 bg-white rounded-xl border-2 border-emerald-500/40 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between text-xs font-semibold text-slate-800">
+                    <span class="truncate">{{ receiverStructure() }} (Bénéficiaire)</span>
+                    <span class="text-emerald-700 font-extrabold whitespace-nowrap">
+                      {{ receiverInitialDays() }}j ➔ {{ receiverFinalDays() }}j
+                    </span>
+                  </div>
+                  <div class="w-full bg-red-100 h-3 rounded-full mt-2 overflow-hidden relative">
+                    <div class="bg-emerald-500 h-full transition-all duration-300" [style.width.%]="(receiverFinalDays() / 15) * 100"></div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between text-[11px] mt-2">
+                  @if (isReceiverOutOfCrisis()) {
+                    <span class="text-emerald-800 font-bold flex items-center gap-0.5 whitespace-nowrap">
+                      <span class="material-symbols-outlined text-xs text-emerald-600">check_circle</span> SORTIE DE ZONE CRITIQUE (&gt; 7j)
+                    </span>
+                  } @else {
+                    <span class="text-amber-800 font-bold flex items-center gap-0.5 whitespace-nowrap">
+                      <span class="material-symbols-outlined text-xs text-amber-600">warning</span> ENCORE SOUS TENSION (&lt; 7j)
+                    </span>
+                  }
+                  <span class="text-emerald-700 font-bold whitespace-nowrap">+{{ transferQuantity() }} ctns</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vecteur de transport -->
+            <div class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200/70 flex flex-wrap items-center justify-between text-xs gap-2">
+              <div class="flex items-center gap-2 text-slate-800">
+                <span class="material-symbols-outlined text-[#006c4a] text-lg">two_wheeler</span>
+                <span><strong>Vecteur :</strong> Moto de Supervision Médicale #DK-04 (Arrivée estimée : 35 min)</span>
+              </div>
+              <span class="text-slate-400 text-[11px]">Chauffeur Relais : M. Ibrahima Sow</span>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <div class="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div class="text-xs text-slate-500 flex items-center gap-1">
+              <span class="material-symbols-outlined text-emerald-700 text-base">task_alt</span>
+              Génère le Bon de Transfert Dématérialisé télétransmis sur SIGL/e-LMIS.
+            </div>
+            <button
+              (click)="executeTransfer()"
+              [disabled]="actionLoading()"
+              class="px-5 py-2.5 bg-[#003426] hover:bg-[#0f4c3a] text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+            >
+              <span class="material-symbols-outlined text-base" [class.animate-spin]="actionLoading()">local_shipping</span>
+              <span>Confirmer &amp; Transmettre le Bon de Péréquation</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- BANDEAU DE TRAÇABILITÉ ET PROTOCOLE PNA -->
+      <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-[#006c4a] flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-2xl">verified</span>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-bold text-[#003426] text-balance">
+                  Traçabilité &amp; Conformité PNA (Pharmacie Nationale d'Approvisionnement)
+                </h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wide whitespace-nowrap flex-shrink-0">
+                  Protocole SIGL Actif
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 text-pretty mt-0.5">
+                Bon de commande officiel PNA n° <strong>{{ ov.bonCommandeActifPna }}</strong> — Réconciliation automatique validée avec le SIGL/e-LMIS national.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+              <span class="text-slate-400 whitespace-nowrap">Prochaine livraison :</span>
+              <span class="font-bold text-slate-800 whitespace-nowrap">{{ ov.prochaineLivraisonCamion }}</span>
+            </div>
+
+            <button
+              (click)="exportSigl()"
+              class="px-3 py-1.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined text-sm">print</span>
+              <span>Bordereau PNA</span>
+            </button>
+
+            <button
+              (click)="showToast('Données transmises avec succès à la Région Médicale de Dakar.')"
+              class="px-3.5 py-1.5 bg-[#006c4a] text-white hover:bg-[#005137] rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined text-sm">send</span>
+              <span>Télétransmettre au Médecin Région</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    }
+  </main>
+</div>

@@ -6,6 +6,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "suple_nutritionnel")
 @Getter
 @Setter
 public class SupleNutritionnel {

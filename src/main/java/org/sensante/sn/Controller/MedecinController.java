@@ -5,10 +5,16 @@ import org.springframework.web.bind.annotation.*;
 import org.sensante.sn.Model.Medecin;
 import org.sensante.sn.Service.MedecinService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/medecins")
+@Tag(name = "Gestion des Médecins", description = "Administration des praticiens, pédiatres et référents cliniques")
+@PreAuthorize("hasAnyRole('SUPERVISEUR', 'ADMINISTRATEUR')")
 public class MedecinController {
 
     private final MedecinService medecinService;

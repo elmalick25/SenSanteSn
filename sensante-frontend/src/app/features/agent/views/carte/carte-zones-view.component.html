@@ -1,0 +1,589 @@
+<!-- ================= MAIN OPERATIONAL WORKSPACE: CARTE DES ZONES & RADAR CONCESSIONS ================= -->
+<div class="space-y-3">
+
+  <!-- TOAST NOTIFICATION FLOATING -->
+  @if (toastMessage()) {
+    <div class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 bg-slate-900/95 text-white rounded-xl shadow-2xl border border-emerald-500/40 backdrop-blur-md transition-all animate-bounce">
+      <span class="material-symbols-outlined text-emerald-400 text-xl">verified</span>
+      <span class="text-sm font-medium tracking-wide whitespace-nowrap">{{ toastMessage() }}</span>
+      <button (click)="toastMessage.set(null)" class="text-slate-400 hover:text-white ml-2">
+        <span class="material-symbols-outlined text-sm">close</span>
+      </button>
+    </div>
+  }
+
+  <!-- 1. EN-TÊTE UNIQUE : ZONE DE TOURNÉE & ÉTAT DU SYSTÈME -->
+  <header class="w-full bg-white rounded-2xl border border-slate-200/90 shadow-sm px-4 sm:px-6 py-3 flex items-center justify-between flex-wrap gap-3">
+    <!-- Zone & Secteur Actif -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <span class="w-8 h-8 rounded-xl bg-emerald-50 text-[#006C4A] flex items-center justify-center flex-shrink-0 font-bold">
+        <span class="material-symbols-outlined text-lg">map</span>
+      </span>
+      <div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 class="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight whitespace-nowrap">
+            {{ overview()?.secteurNom || 'Zone Cible Prioritaire Secteur 4' }}
+          </h1>
+          <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 text-[11px] font-bold whitespace-nowrap">
+            {{ overview()?.tourneeLibelle || 'Tournée Terrain J-3' }}
+          </span>
+          <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-900 border border-emerald-200 text-[11px] font-bold whitespace-nowrap">
+            Concessions 18 à 34
+          </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5 text-pretty hidden sm:block">
+          Bornage cartographique géolocalisé &bull; Périmètre Médina Sud &bull; Détection de proximité RTK
+        </p>
+      </div>
+    </div>
+
+    <!-- Actions & État Réseau / Hors-Ligne -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <!-- Badge État Synchro -->
+      <span
+        [class.bg-emerald-50]="offlineSyncService.isOnline()"
+        [class.text-emerald-800]="offlineSyncService.isOnline()"
+        [class.border-emerald-200]="offlineSyncService.isOnline()"
+        [class.bg-amber-50]="!offlineSyncService.isOnline()"
+        [class.text-amber-800]="!offlineSyncService.isOnline()"
+        [class.border-amber-200]="!offlineSyncService.isOnline()"
+        class="px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span
+          class="w-2 h-2 rounded-full"
+          [class.bg-emerald-500]="offlineSyncService.isOnline()"
+          [class.bg-amber-500]="!offlineSyncService.isOnline()"
+        ></span>
+        <span>{{ offlineSyncService.isOnline() ? 'En ligne (Synchronisé)' : 'Hors-ligne (Dexie.js)' }}</span>
+      </span>
+
+      <!-- Bouton d'Urgence SAMU / Poste Médina -->
+      <a
+        href="tel:1515"
+        class="h-9 px-3.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all text-xs whitespace-nowrap"
+      >
+        <span class="material-symbols-outlined text-base">emergency</span>
+        <span>SOS Poste Médina</span>
+      </a>
+
+      <!-- Actualiser -->
+      <button
+        (click)="chargerDonnees()"
+        class="h-9 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-xl flex items-center gap-1.5 text-xs font-semibold transition-all whitespace-nowrap cursor-pointer"
+      >
+        <span class="material-symbols-outlined text-base text-emerald-800">refresh</span>
+        <span>Actualiser</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- BASCULE MOBILE ONGLETS (< 1024px) -->
+  <div class="flex lg:hidden bg-slate-100 p-1 rounded-xl gap-1">
+    <button
+      (click)="activeMobileTab.set('carte')"
+      class="flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap"
+    >
+      <span class="material-symbols-outlined text-base">map</span>
+      <span>Carte &amp; Radar</span>
+    </button>
+    <button
+      (click)="activeMobileTab.set('formulaire')"
+      [class.bg-[#006C4A]]="activeMobileTab() === 'formulaire'"
+      [class.text-white]="activeMobileTab() === 'formulaire'"
+      [class.text-slate-700]="activeMobileTab() !== 'formulaire'"
+      class="flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap"
+    >
+      <span class="material-symbols-outlined text-base">fact_check</span>
+      <span>Fiche Saisie Concession</span>
+    </button>
+  </div>
+
+  <!-- LOADING SKELETON STATE -->
+  @if (isLoading()) {
+    <div class="h-[680px] rounded-2xl border border-slate-200 bg-white p-8 flex flex-col items-center justify-center text-center space-y-4 shadow-sm animate-pulse">
+      <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
+        <span class="material-symbols-outlined text-3xl animate-spin">sync</span>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-800 text-balance">Chargement de la Cartographie Leaflet &amp; OpenStreetMap</h3>
+        <p class="text-xs text-slate-500 mt-1 text-pretty">Géolocalisation des concessions Médina et vérification du cache Dexie.js...</p>
+      </div>
+    </div>
+  }
+
+  <!-- ERROR STATE WITH RETRY -->
+  @else if (errorMessage()) {
+    <div class="h-[400px] rounded-2xl border border-red-200 bg-red-50/60 p-8 flex flex-col items-center justify-center text-center space-y-4 shadow-sm">
+      <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+        <span class="material-symbols-outlined text-3xl">cloud_off</span>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900 text-balance">Mode Déconnecté &mdash; Aucune donnée locale disponible</h3>
+        <p class="text-xs text-slate-600 mt-1 max-w-md text-pretty">{{ errorMessage() }}</p>
+      </div>
+      <button
+        (click)="chargerDonnees()"
+        class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-sm"
+      >
+        <span class="material-symbols-outlined text-sm">refresh</span>
+        <span>Réessayer la synchronisation</span>
+      </button>
+    </div>
+  }
+
+  <!-- NOMINAL DYNAMIC WORKSPACE: MAP CANVAS + RIGHT FIELD DRAWER -->
+  @else {
+    <div class="h-[calc(100vh-190px)] min-h-[640px] flex overflow-hidden rounded-2xl border-2 border-slate-300 shadow-md relative bg-[#DCE5DF]">
+
+      <!-- ===================================================================== -->
+      <!-- LEFT: GIS LEAFLET OPENSTREETMAP + RADAR CONCESSIONS -->
+      <!-- ===================================================================== -->
+      <section
+        [class.hidden]="activeMobileTab() !== 'carte'"
+        class="flex-1 lg:flex relative h-full bg-[#DCE5DF] overflow-hidden select-none"
+        aria-label="Carte interactive Leaflet et radar terrain"
+      >
+        <!-- Vraie carte interactive Leaflet avec tuiles OpenStreetMap -->
+        <div id="map-agent-concessions" class="w-full h-full z-0 relative"></div>
+
+        <!-- FLOATING RADAR WIDGET: CONCESSIONS WITHIN 200M (TOP-LEFT OF MAP) -->
+        <div class="absolute top-4 left-4 w-72 bg-white/95 backdrop-blur-md border-2 border-[#0F4C3A]/30 rounded-xl shadow-xl overflow-hidden z-30">
+          <!-- Radar Widget Header -->
+          <div class="px-3 py-2 bg-[#0F4C3A] text-white flex items-center justify-between">
+            <div class="flex items-center gap-1.5 font-bold text-xs">
+              <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-300"></span>
+              </span>
+              <span class="whitespace-nowrap">RADAR CONCESSIONS (200m)</span>
+            </div>
+            <span class="text-[10px] font-mono bg-[#003426] px-1.5 py-0.5 rounded text-emerald-300 font-bold whitespace-nowrap">
+              {{ concessions().length }} Proches
+            </span>
+          </div>
+
+          <!-- Radar Graphic Sweep + Proximity Alert Banner -->
+          <div class="p-2.5 flex items-center gap-3 border-b border-slate-200 bg-[#F2F7F4]">
+            <!-- Mini Circular Radar Display -->
+            <div class="relative w-16 h-16 rounded-full bg-[#062419] border border-emerald-500/50 flex-shrink-0 flex items-center justify-center overflow-hidden">
+              <!-- Concentric distance rings -->
+              <div class="absolute w-12 h-12 rounded-full border border-emerald-500/30"></div>
+              <div class="absolute w-6 h-6 rounded-full border border-emerald-500/30"></div>
+              <!-- Crosshairs -->
+              <div class="absolute w-full h-[1px] bg-emerald-500/20"></div>
+              <div class="absolute h-full w-[1px] bg-emerald-500/20"></div>
+              <!-- Rotating sweep beam -->
+              <div class="radar-beam absolute w-8 h-8 -top-0 -right-0 bg-gradient-to-br from-emerald-400/50 to-transparent"></div>
+              <!-- Targets on mini radar -->
+              <span class="absolute top-4 right-5 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+              <span class="absolute bottom-5 left-4 w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span class="absolute top-3 left-6 w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <!-- Center Ego Dot -->
+              <span class="w-2 h-2 rounded-full bg-white ring-2 ring-emerald-400 z-10"></span>
+            </div>
+
+            <div class="text-xs">
+              <div class="font-bold text-[#003426] flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm text-red-600 flex-shrink-0" data-icon="warning">warning</span>
+                <span class="whitespace-nowrap">1 Urgence Immédiate</span>
+              </div>
+              <div class="text-[11px] text-slate-600 leading-tight mt-0.5 text-pretty">
+                {{ concessionActive()?.alerteTexte || 'Concession 21 (Diop) à votre niveau. 2 nourrissons non dépistés.' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Nearby Concessions Quick Selector Rows -->
+          <div class="divide-y divide-slate-200/80 max-h-48 overflow-y-auto custom-scrollbar">
+            @for (c of concessions(); track c.id) {
+              <button
+                (click)="selectionnerConcession(c)"
+                [class.bg-red-50]="concessionActive()?.id === c.id && c.statut === 'MAS'"
+                [class.bg-emerald-50]="concessionActive()?.id === c.id && c.statut !== 'MAS'"
+                class="w-full text-left p-2 hover:bg-slate-100 flex items-center justify-between transition-colors cursor-pointer"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span
+                    [class.bg-red-600]="c.statut === 'MAS'"
+                    [class.bg-amber-500]="c.statut === 'MAM'"
+                    [class.bg-emerald-600]="c.statut === 'VISITE'"
+                    [class.bg-slate-400]="c.statut === 'NORMAL'"
+                    class="w-5 h-5 rounded-full text-white font-bold text-[10px] flex items-center justify-center flex-shrink-0"
+                  >
+                    {{ c.ordrePriorite }}
+                  </span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-xs text-slate-900 truncate">{{ c.id }} &mdash; {{ c.nomFamille }}</div>
+                    <div class="text-[10px] text-slate-500 truncate">{{ c.distanceTexte }} &bull; {{ c.chefFamille }}</div>
+                  </div>
+                </div>
+                <span
+                  [class.bg-red-600]="c.id === concessionActive()?.id"
+                  [class.text-white]="c.id === concessionActive()?.id"
+                  [class.text-amber-800]="c.id !== concessionActive()?.id && c.statut === 'MAM'"
+                  [class.text-slate-500]="c.id !== concessionActive()?.id && c.statut !== 'MAM'"
+                  class="px-1.5 py-0.5 rounded font-bold text-[9px] whitespace-nowrap flex-shrink-0"
+                >
+                  {{ c.id === concessionActive()?.id ? 'EN COURS' : (c.statut === 'MAM' ? 'Suivant' : 'En attente') }}
+                </span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- FLOATING OVERLAY: GPS MAP CONTROLS & CACHE STATUS (BOTTOM LEFT) -->
+        <div class="absolute bottom-4 left-4 flex flex-col gap-2 z-20">
+          <!-- Offline Map Health Card -->
+          <div class="bg-white/95 backdrop-blur-md border border-slate-300 px-3 py-2 rounded-xl shadow-md flex items-center gap-3">
+            <div class="w-7 h-7 rounded bg-emerald-100 flex items-center justify-center text-[#006C4A] flex-shrink-0">
+              <span class="material-symbols-outlined text-lg" data-icon="storage">storage</span>
+            </div>
+            <div class="text-xs">
+              <div class="font-bold text-slate-900 whitespace-nowrap">Cartographie Vectorielle Locale</div>
+              <div class="text-[10px] text-emerald-800 font-semibold flex items-center gap-1 whitespace-nowrap">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 flex-shrink-0"></span>
+                <span>100% Hors-Ligne (Dakar Médina Secteurs 1–6)</span>
+              </div>
+            </div>
+            <button
+              (click)="chargerDonnees()"
+              class="ml-2 px-2 py-1 bg-white hover:bg-slate-100 border border-slate-300 text-[11px] font-bold rounded text-[#003426] whitespace-nowrap shadow-2xs"
+            >
+              Actualiser
+            </button>
+          </div>
+
+          <!-- Standard Map Action Buttons -->
+          <div class="flex items-center gap-2">
+            <div class="bg-white border border-slate-300 rounded-lg shadow-md overflow-hidden flex">
+              <button class="w-8 h-8 flex items-center justify-center hover:bg-slate-100 text-slate-800 font-bold text-base border-r border-slate-200 cursor-pointer">+</button>
+              <button class="w-8 h-8 flex items-center justify-center hover:bg-slate-100 text-slate-800 font-bold text-base cursor-pointer">&minus;</button>
+            </div>
+            <button
+              (click)="recalculerCompas()"
+              class="px-3 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold flex items-center gap-1 shadow-md text-slate-800 whitespace-nowrap cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[#006C4A] text-sm" data-icon="my_location">my_location</span>
+              <span class="whitespace-nowrap">Recaler Compas</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- RIGHT FIELD OPERATOR COCKPIT DRAWER (~460px) -->
+      <!-- ===================================================================== -->
+      <aside
+        [class.hidden]="activeMobileTab() !== 'formulaire'"
+        class="w-full lg:w-[450px] xl:w-[470px] h-full bg-white border-l-2 border-slate-300 flex flex-col z-30 shadow-2xl overflow-hidden flex-shrink-0"
+        aria-label="Saisie terrain tactile et compteurs"
+      >
+        <!-- Top Concession Header with Big Offline Indicator -->
+        <div class="p-4 border-b border-slate-200 bg-slate-50/80 flex-shrink-0">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span
+                  [class.bg-red-600]="concessionActive()?.statut === 'MAS'"
+                  [class.bg-amber-600]="concessionActive()?.statut === 'MAM'"
+                  [class.bg-emerald-600]="concessionActive()?.statut === 'VISITE'"
+                  [class.bg-blue-600]="concessionActive()?.statut === 'NORMAL'"
+                  class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1 whitespace-nowrap"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping flex-shrink-0"></span>
+                  <span>{{ concessionActive()?.statut === 'MAS' ? 'PRIORITÉ MAS CRITIQUE' : 'CONCESSION ' + concessionActive()?.statut }}</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-200 text-slate-700 whitespace-nowrap">
+                  ID: {{ concessionActive()?.codeConcession || 'MED-C21-2024' }}
+                </span>
+              </div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900 mt-1.5 text-balance">
+                {{ concessionActive()?.id }} &mdash; {{ concessionActive()?.nomFamille }}
+              </h2>
+              <p class="text-xs text-slate-600 flex items-center gap-1 mt-0.5 text-pretty">
+                <span class="material-symbols-outlined text-xs text-[#006C4A] flex-shrink-0" data-icon="location_on">location_on</span>
+                <span>{{ concessionActive()?.adresse }} &bull; Concessionnaire : {{ concessionActive()?.chefFamille }}</span>
+              </p>
+            </div>
+            <div class="flex flex-col items-end flex-shrink-0">
+              <span class="text-[11px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded whitespace-nowrap">
+                GPS Fixé {{ concessionActive()?.gpsPrecision || '±2m' }}
+              </span>
+              <span class="text-[10px] text-slate-500 mt-0.5 whitespace-nowrap">
+                Visite #{{ concessionActive()?.numeroVisite || 1 }} / {{ concessionActive()?.totalVisites || 3 }} prévues
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scrollable Touch Form Body -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+
+          <!-- 1. HIGH-SPEED TACTILE COUNTER GRID (Optimized for glove/field finger taps) -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1">
+                <span class="material-symbols-outlined text-[#0F4C3A] text-sm" data-icon="dialpad">dialpad</span>
+                <span class="whitespace-nowrap">Saisie Tactile Rapide (Un-Clic)</span>
+              </h3>
+              <span class="text-[11px] text-slate-500 font-medium whitespace-nowrap">Pas de clavier requis</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <!-- Counter: Enfants 6-59 mois présents -->
+              <div class="p-2.5 rounded-xl border-2 border-slate-300 bg-slate-50 flex flex-col justify-between">
+                <span class="text-xs font-bold text-slate-800 whitespace-nowrap">Enfants examinés</span>
+                <div class="flex items-center justify-between mt-1.5">
+                  <span class="text-2xl font-bold font-mono text-[#003426]">{{ enfantsExamines() < 10 ? '0' + enfantsExamines() : enfantsExamines() }}</span>
+                  <div class="flex items-center gap-1">
+                    <button
+                      (click)="decrementer('enfants')"
+                      class="w-9 h-9 rounded-lg bg-white hover:bg-slate-100 active:scale-90 border border-slate-300 font-black text-base shadow-xs flex items-center justify-center text-slate-800 cursor-pointer"
+                    >&minus;</button>
+                    <button
+                      (click)="incrementer('enfants')"
+                      class="w-9 h-9 rounded-lg bg-[#0F4C3A] text-white hover:bg-[#003426] active:scale-90 font-black text-base shadow-xs flex items-center justify-center cursor-pointer"
+                    >+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Counter: Cas MAS Rouge Détectés -->
+              <div class="p-2.5 rounded-xl border-2 border-red-300 bg-red-50/70 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-red-900 flex items-center gap-1 whitespace-nowrap">
+                    <span class="w-2 h-2 rounded-full bg-red-600 flex-shrink-0"></span>
+                    <span>Cas MAS (&lt;115)</span>
+                  </span>
+                  <span class="text-[10px] font-black text-red-700 uppercase whitespace-nowrap">Urgence</span>
+                </div>
+                <div class="flex items-center justify-between mt-1.5">
+                  <span class="text-2xl font-bold font-mono text-red-700">{{ casMas() < 10 ? '0' + casMas() : casMas() }}</span>
+                  <div class="flex items-center gap-1">
+                    <button
+                      (click)="decrementer('mas')"
+                      class="w-9 h-9 rounded-lg bg-white hover:bg-red-100 active:scale-90 border border-red-300 text-red-900 font-black text-base shadow-xs flex items-center justify-center cursor-pointer"
+                    >&minus;</button>
+                    <button
+                      (click)="incrementer('mas')"
+                      class="w-9 h-9 rounded-lg bg-red-600 text-white hover:bg-red-700 active:scale-90 font-black text-base shadow-xs flex items-center justify-center cursor-pointer"
+                    >+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Counter: Cas MAM Jaune -->
+              <div class="p-2.5 rounded-xl border-2 border-amber-300 bg-amber-50/60 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-amber-900 flex items-center gap-1 whitespace-nowrap">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"></span>
+                    <span>Cas MAM (115&ndash;124)</span>
+                  </span>
+                </div>
+                <div class="flex items-center justify-between mt-1.5">
+                  <span class="text-2xl font-bold font-mono text-amber-800">{{ casMam() < 10 ? '0' + casMam() : casMam() }}</span>
+                  <div class="flex items-center gap-1">
+                    <button
+                      (click)="decrementer('mam')"
+                      class="w-9 h-9 rounded-lg bg-white hover:bg-amber-100 active:scale-90 border border-amber-300 text-amber-900 font-black text-base shadow-xs flex items-center justify-center cursor-pointer"
+                    >&minus;</button>
+                    <button
+                      (click)="incrementer('mam')"
+                      class="w-9 h-9 rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-90 font-black text-base shadow-xs flex items-center justify-center cursor-pointer"
+                    >+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Counter: Rations Plumpy'Nut données -->
+              <div class="p-2.5 rounded-xl border-2 border-slate-300 bg-slate-50 flex flex-col justify-between">
+                <span class="text-xs font-bold text-slate-800 whitespace-nowrap">Plumpy'Nut délivrés</span>
+                <div class="flex items-center justify-between mt-1.5">
+                  <span class="text-2xl font-bold font-mono text-[#003426]">{{ atpeDelivres() < 10 ? '0' + atpeDelivres() : atpeDelivres() }}</span>
+                  <div class="flex items-center gap-1">
+                    <button
+                      (click)="decrementer('atpe')"
+                      class="w-9 h-9 rounded-lg bg-white hover:bg-slate-100 active:scale-90 border border-slate-300 font-black text-base shadow-xs flex items-center justify-center text-slate-800 cursor-pointer"
+                    >&minus;</button>
+                    <button
+                      (click)="incrementer('atpe')"
+                      class="w-9 h-9 rounded-lg bg-[#0F4C3A] text-white hover:bg-[#003426] active:scale-90 font-black text-base shadow-xs flex items-center justify-center cursor-pointer"
+                    >+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. WOLOF VOICE NOTE RECORDER (Special Field Feature for non-literate briefings) -->
+          <div class="p-3.5 rounded-xl border-2 border-emerald-600/30 bg-emerald-50/40">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-bold text-xs text-[#003426]">
+                <span class="material-symbols-outlined text-[#006C4A] text-base" data-icon="mic">mic</span>
+                <span class="whitespace-nowrap">Note Vocale Bajenu Gox (Wolof / Diola)</span>
+              </div>
+              <span
+                [class.bg-emerald-700]="noteVocaleEnregistree()"
+                [class.bg-slate-400]="!noteVocaleEnregistree()"
+                class="px-2 py-0.5 text-white rounded text-[10px] font-bold whitespace-nowrap"
+              >
+                {{ noteVocaleEnregistree() ? 'Enregistré' : 'En attente' }}
+              </span>
+            </div>
+
+            <!-- Audio Player Preview Box -->
+            <div class="mt-2.5 p-2.5 rounded-lg bg-white border border-slate-300 flex items-center gap-3 shadow-2xs">
+              <button
+                (click)="toggleAudioNote()"
+                class="w-9 h-9 rounded-full bg-[#006C4A] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-transform flex-shrink-0 cursor-pointer"
+              >
+                <span class="material-symbols-outlined text-base" data-icon="play_arrow">
+                  {{ isAudioPlaying() ? 'pause' : 'play_arrow' }}
+                </span>
+              </button>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between text-[11px] font-bold text-slate-800">
+                  <span class="truncate">{{ isAudioPlaying() ? 'Lecture en cours...' : 'Note vocale en Wolof' }}</span>
+                  <span class="font-mono text-[#006C4A] ml-2 whitespace-nowrap">{{ noteVocaleDuree() }}</span>
+                </div>
+                <!-- Animated Sound Wave Visualization -->
+                <div class="flex items-end gap-1 h-4 mt-1.5">
+                  <span class="w-1 bg-[#006C4A] rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '14px' : '6px'"></span>
+                  <span class="w-1 bg-[#006C4A] rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '16px' : '12px'"></span>
+                  <span class="w-1 bg-[#006C4A] rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '12px' : '8px'"></span>
+                  <span class="w-1 bg-[#006C4A] rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '16px' : '14px'"></span>
+                  <span class="w-1 bg-[#006C4A] rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '10px' : '6px'"></span>
+                  <span class="w-1 bg-[#006C4A] rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '14px' : '10px'"></span>
+                  <span class="w-1 bg-[#006C4A] rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '8px' : '4px'"></span>
+                  <span class="w-1 bg-[#006C4A] rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '16px' : '12px'"></span>
+                  <span class="w-1 bg-[#006C4A]/40 rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '10px' : '6px'"></span>
+                  <span class="w-1 bg-[#006C4A]/40 rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '12px' : '8px'"></span>
+                  <span class="w-1 bg-[#006C4A]/40 rounded-full transition-all duration-300" [style.height]="isAudioPlaying() ? '6px' : '4px'"></span>
+                </div>
+              </div>
+              <button
+                (click)="supprimerAudioNote()"
+                class="w-7 h-7 rounded hover:bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 cursor-pointer"
+                title="Recommencer l'enregistrement"
+              >
+                <span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-600 mt-2 italic text-pretty">
+              &laquo;&nbsp;{{ noteVocaleTranscription() }}&nbsp;&raquo;
+            </p>
+          </div>
+
+          <!-- 3. DIGITAL SIGNATURE PAD FOR HOUSEHOLD REPRESENTATIVE -->
+          <div class="p-3.5 rounded-xl border-2 border-slate-300 bg-white">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-1.5 font-bold text-xs text-slate-900">
+                <span class="material-symbols-outlined text-base text-[#003426]" data-icon="draw">draw</span>
+                <span class="whitespace-nowrap">Émargement Représentant du Foyer</span>
+              </div>
+              <button
+                (click)="effacerSignature()"
+                class="text-[10px] text-slate-500 hover:text-red-600 font-bold underline cursor-pointer whitespace-nowrap"
+              >
+                Effacer
+              </button>
+            </div>
+
+            <!-- Canvas Tactile Interactif pour Signature Réelle -->
+            <div class="w-full h-24 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 relative overflow-hidden cursor-crosshair">
+              <canvas
+                #signatureCanvas
+                width="360"
+                height="96"
+                class="w-full h-full touch-none"
+                (mousedown)="startDrawing($event)"
+                (mousemove)="draw($event)"
+                (mouseup)="stopDrawing()"
+                (mouseleave)="stopDrawing()"
+                (touchstart)="startDrawing($event)"
+                (touchmove)="draw($event)"
+                (touchend)="stopDrawing()"
+              ></canvas>
+              @if (!signatureValidee()) {
+                <div class="absolute inset-0 pointer-events-none flex items-center justify-center text-xs text-slate-400 italic">
+                  Signer ici avec le doigt ou stylet tactile
+                </div>
+              }
+              @if (signatureValidee()) {
+                <div class="absolute bottom-1 right-2 pointer-events-none text-[9px] font-mono text-slate-500 whitespace-nowrap bg-white/80 px-1 rounded">
+                  Horodaté {{ signatureHorodatage() }}
+                </div>
+              }
+            </div>
+            <div class="flex items-center justify-between text-[10px] text-slate-600 mt-1.5">
+              <span class="text-pretty">Consenti : Remise MUAC + Orientation Centre</span>
+              <span
+                [class.text-emerald-700]="signatureValidee()"
+                [class.text-slate-400]="!signatureValidee()"
+                class="font-bold whitespace-nowrap flex-shrink-0"
+              >
+                {{ signatureValidee() ? 'Empreinte validée' : 'Non signé' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 4. CHECKLIST D'ACTIONS TERRAIN RAPIDES -->
+          <div class="space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-300 text-xs">
+            <label class="flex items-center gap-2 p-1 font-semibold cursor-pointer text-slate-800">
+              <input
+                type="checkbox"
+                [(ngModel)]="eauPurifieeRemise"
+                class="rounded text-[#006C4A] focus:ring-[#006C4A] h-4 w-4"
+              />
+              <span class="whitespace-nowrap">Comprimés de purification d'eau remis (Aquatabs 50cp)</span>
+            </label>
+            <label class="flex items-center gap-2 p-1 font-semibold cursor-pointer text-slate-800">
+              <input
+                type="checkbox"
+                [(ngModel)]="ficheLiaisonTamponnee"
+                class="rounded text-[#006C4A] focus:ring-[#006C4A] h-4 w-4"
+              />
+              <span class="whitespace-nowrap">Fiche de liaison sanitaire tamponnée</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- STICKY ACTION FOOTER: INSTANT ONE-TAP NEXT CONCESSION -->
+        <div class="p-3.5 border-t-2 border-slate-300 bg-slate-50 space-y-2 flex-shrink-0">
+          <!-- Giant One-Tap Next Target CTA Button -->
+          <button
+            (click)="soumettreEtPasserSuivante()"
+            [disabled]="isSubmitting()"
+            class="w-full h-12 bg-[#006C4A] hover:bg-[#005137] active:scale-[0.98] text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+          >
+            @if (isSubmitting()) {
+              <span class="material-symbols-outlined text-lg animate-spin">sync</span>
+              <span class="whitespace-nowrap">Enregistrement local...</span>
+            } @else {
+              <span class="material-symbols-outlined text-xl" data-icon="check_circle">check_circle</span>
+              <span class="whitespace-nowrap">Soumettre et Passer à la Concession Suivante (Ba &mdash; 45m)</span>
+              <span class="material-symbols-outlined text-lg" data-icon="arrow_forward">arrow_forward</span>
+            }
+          </button>
+
+          <!-- Secondary Actions: Offline Draft / Hold / SAMU -->
+          <div class="flex items-center gap-2">
+            <button
+              (click)="mettreEnAttente()"
+              class="flex-1 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-[#003426] font-bold text-xs rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined text-sm" data-icon="pause">pause</span>
+              <span class="whitespace-nowrap">Mettre en attente (Absent)</span>
+            </button>
+            <button
+              (click)="alerterSamu()"
+              class="flex-1 py-2 bg-red-50 hover:bg-red-100 border border-red-300 text-red-800 font-bold text-xs rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
+            >
+              <span class="material-symbols-outlined text-sm text-red-600" data-icon="ambulance">ambulance</span>
+              <span class="whitespace-nowrap">Alerte Évacuation SAMU</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  }
+</div>

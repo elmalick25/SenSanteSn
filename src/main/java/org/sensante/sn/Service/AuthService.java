@@ -62,6 +62,7 @@ public class AuthService {
                 .nom(savedUser.getNom())
                 .prenom(savedUser.getPrenom())
                 .email(savedUser.getEmail())
+                .telephone(savedUser.getTelephone())
                 .role(savedUser.getRole())
                 .build();
     }
@@ -118,6 +119,7 @@ public class AuthService {
                 .nom(user.getNom())
                 .prenom(user.getPrenom())
                 .email(user.getEmail())
+                .telephone(user.getTelephone())
                 .role(user.getRole())
                 .build();
     }

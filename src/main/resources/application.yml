@@ -3,17 +3,60 @@ spring:
     name: SenSante
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/sensante_db
-    username: postgres
-    password: "Flick2004@"
+    url: ${SENSANTE_DB_URL:jdbc:postgresql://localhost:5432/sensante_db}
+    username: ${SENSANTE_DB_USER:postgres}
+    password: ${SENSANTE_DB_PASSWORD:Flick2004@}
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
 
 server:
-  port: 8082
+  port: ${SENSANTE_SERVER_PORT:8082}
+
+sensante:
+  storage:
+    local-dir: ${SENSANTE_STORAGE_DIR:./uploads/sensante}
+    max-file-size-mb: 10
+  sms:
+    provider: ${SMS_PROVIDER:dev} # dev | orange | twilio
+    sender-id: "SenSante"
+    orange:
+      api-url: "https://api.orange.com/smsmessaging/v1/outbound"
+      client-id: ${ORANGE_CLIENT_ID:test_client_id}
+      client-secret: ${ORANGE_CLIENT_SECRET:test_client_secret}
+    twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID:test_sid}
+      auth-token: ${TWILIO_AUTH_TOKEN:test_token}
+      from-number: ${TWILIO_FROM_NUMBER:+221770000000}
+  jwt:
+    secret: ${SENSANTE_JWT_SECRET:SenSanteSecretKeyForJwtAuthenticationSecurityToken2026Min256BitsRequiredByHmacSha256Algorithm}
+    expiration-ms: ${SENSANTE_JWT_EXPIRATION_MS:86400000}
+  ia:
+    # Groq Whisper — STT multilingue (fr, wo) — gratuit
+    groq:
+      api-key: ${GROQ_API_KEY:}
+      whisper-model: whisper-large-v3-turbo
+      base-url: https://api.groq.com/openai/v1
+    # Hugging Face — MMS-TTS Wolof (Meta) — gratuit (tier public)
+    huggingface:
+      api-key: ${HUGGINGFACE_API_KEY:}
+      tts-wolof-model: facebook/mms-tts-wol
+      base-url: https://api-inference.huggingface.co/models
+    # Paramètres détection anomalies statistiques
+    anomalie:
+      fenetre-jours: 7           # Fenêtre glissante pour la moyenne/écart-type
+      zscore-seuil: 2.0          # z-score > 2.0 → volume aberrant
+      heure-min-saisie: 6        # Avant 06h00 → suspect
+      heure-max-saisie: 22       # Après 22h00 → suspect

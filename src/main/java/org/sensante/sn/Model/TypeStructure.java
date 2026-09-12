@@ -1,7 +1,11 @@
 package org.sensante.sn.Model;
 
 public enum TypeStructure {
-    POSTE_DE_SANTE,
+    HOPITAL_NATIONAL,
+    HOPITAL_REGIONAL,
+    HOPITAL,
     CENTRE_DE_SANTE,
-    HOPITAL
-}
+    POSTE_DE_SANTE,
+    DISPENSAIRE,
+    CREN_AUTONOME
+}

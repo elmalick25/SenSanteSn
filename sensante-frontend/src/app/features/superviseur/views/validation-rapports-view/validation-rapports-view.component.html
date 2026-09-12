@@ -1,0 +1,602 @@
+<!-- MAIN WORKSPACE CANVAS -->
+<div class="flex-1 flex flex-col h-full overflow-hidden bg-[#f8f9ff]">
+
+  <!-- TOP APP BAR -->
+  <header class="h-16 shrink-0 bg-white border-b border-[#E5E7EB] px-6 flex items-center justify-between z-20 shadow-[0_1px_3px_0_rgba(15,76,58,0.04)]">
+    <!-- Left: Breadcrumb & Alert Badge -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 text-xs text-[#6B7280]">
+        <span class="hover:text-[#003426] transition-colors cursor-pointer">District Sanitaire Dakar Ouest</span>
+        <span class="text-[#D1D5DB]">/</span>
+        <span class="text-[#003426] font-semibold">Validation des Rapports</span>
+      </div>
+      <span class="px-2.5 py-0.5 rounded-full bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] text-xs font-bold flex items-center gap-1.5 whitespace-nowrap flex-shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse"></span>
+        {{ overview()?.totalEnAttente || queue().length }} en attente
+      </span>
+    </div>
+
+    <!-- Center-Right: Quick Search & Filter Cluster -->
+    <div class="flex items-center gap-3">
+      <!-- Quick Search Field -->
+      <div class="relative w-72 lg:w-80">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#9CA3AF]">search</span>
+        <input
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearch($event)"
+          class="w-full h-9 pl-9 pr-4 text-xs bg-[#F9FAFB] border border-[#D1D5DB] rounded-lg focus:bg-white focus:outline-none focus:border-[#003426] focus:ring-2 focus:ring-[#003426]/10 transition-all placeholder:text-[#9CA3AF]"
+          placeholder="Rechercher un rapport, un agent ou une zone..."
+          type="text"
+        />
+      </div>
+
+      <!-- Filter Pills Group -->
+      <div class="hidden xl:flex items-center bg-[#F3F4F6] p-0.5 rounded-lg text-xs text-[#4B5563]">
+        <button
+          (click)="setFilter('TOUS')"
+          class="px-3 py-1 rounded transition-colors whitespace-nowrap"
+          [ngClass]="activeFilter() === 'TOUS' ? 'bg-white text-[#003426] font-semibold shadow-xs' : 'hover:text-[#003426]'"
+        >
+          Tous ({{ overview()?.totalEnAttente || 8 }})
+        </button>
+        <button
+          (click)="setFilter('CRENAS_MAS')"
+          class="px-3 py-1 rounded transition-colors whitespace-nowrap"
+          [ngClass]="activeFilter() === 'CRENAS_MAS' ? 'bg-white text-[#003426] font-semibold shadow-xs' : 'hover:text-[#003426]'"
+        >
+          CRENAS / MAS ({{ overview()?.totalCrenasMas || 4 }})
+        </button>
+        <button
+          (click)="setFilter('DEPISTAGE_SYSTEMATIQUE')"
+          class="px-3 py-1 rounded transition-colors whitespace-nowrap"
+          [ngClass]="activeFilter() === 'DEPISTAGE_SYSTEMATIQUE' ? 'bg-white text-[#003426] font-semibold shadow-xs' : 'hover:text-[#003426]'"
+        >
+          Dépistages ({{ overview()?.totalDepistages || 3 }})
+        </button>
+        <button
+          (click)="setFilter('VISITE_MENAGE')"
+          class="px-3 py-1 rounded transition-colors whitespace-nowrap"
+          [ngClass]="activeFilter() === 'VISITE_MENAGE' ? 'bg-white text-[#003426] font-semibold shadow-xs' : 'hover:text-[#003426]'"
+        >
+          Ménages ({{ overview()?.totalMenages || 1 }})
+        </button>
+      </div>
+
+      <!-- Actions and Sync -->
+      <div class="flex items-center gap-2 border-l border-[#E5E7EB] pl-3">
+        <button
+          (click)="showToast('Notifications Directes', '8 alertes prioritaires requièrent votre validation médicale.')"
+          class="w-9 h-9 flex items-center justify-center rounded-lg text-[#4B5563] hover:bg-[#F3F4F6] transition-colors relative"
+          title="Notifications"
+        >
+          <span class="material-symbols-outlined text-[20px]">notifications</span>
+          <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#DC2626]"></span>
+        </button>
+
+        <button
+          (click)="loadOverview(); loadQueue(false); showToast('Synchronisation DHIS2', 'Flux instantané vérifié avec le serveur national SNIS.')"
+          class="w-9 h-9 flex items-center justify-center rounded-lg text-[#4B5563] hover:bg-[#F3F4F6] transition-colors"
+          title="Synchronisation DHIS2"
+        >
+          <span class="material-symbols-outlined text-[20px]">sync</span>
+        </button>
+
+        <button
+          (click)="toggleSort()"
+          class="h-9 px-3 rounded-lg border border-[#D1D5DB] bg-white text-[#374151] hover:bg-[#F9FAFB] text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap"
+        >
+          <span class="material-symbols-outlined text-[16px]">filter_list</span>
+          <span>Trier : {{ sortOption() === 'PRIORITE' ? 'Priorité' : 'Date' }}</span>
+        </button>
+
+        <button
+          (click)="validerLot()"
+          [disabled]="isActionInProgress() || queue().length === 0"
+          class="h-9 px-3.5 rounded-lg bg-[#003426] text-white hover:bg-[#0f4c3a] text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all whitespace-nowrap disabled:opacity-50"
+        >
+          <span class="material-symbols-outlined text-[16px]">checklist</span>
+          <span>Valider le Lot</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENT WORKSPACE: Two-column split layout -->
+  <div class="flex-1 flex overflow-hidden p-4 lg:p-6 gap-4 lg:gap-6 bg-[#f8f9ff]">
+
+    <!-- ===================================================================== -->
+    <!-- LEFT COLUMN (~38%): Queue List of Submitted Reports                   -->
+    <!-- ===================================================================== -->
+    <section class="w-full lg:w-[38%] flex flex-col bg-white border border-[#E5E7EB] rounded-xl shadow-[0_1px_3px_0_rgba(15,76,58,0.04)] overflow-hidden shrink-0">
+      
+      <!-- Queue Header with Sorting -->
+      <div class="h-12 shrink-0 px-4 border-b border-[#F3F4F6] flex items-center justify-between bg-white">
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-bold text-[#121c28]">File d'attente</h2>
+          <span class="px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] text-xs font-semibold whitespace-nowrap flex-shrink-0">
+            {{ queue().length }} missions
+          </span>
+        </div>
+        <div class="flex items-center gap-1 text-xs text-[#6B7280]">
+          <span>Trier :</span>
+          <button (click)="toggleSort()" class="font-semibold text-[#003426] flex items-center gap-0.5 hover:underline whitespace-nowrap">
+            {{ sortOption() === 'PRIORITE' ? 'Priorité clinique' : 'Date soumission' }}
+            <span class="material-symbols-outlined text-[14px]">expand_more</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State: Skeletons -->
+      @if (isLoadingQueue()) {
+        <div class="flex-1 p-3 space-y-3 overflow-y-auto">
+          @for (i of [1,2,3,4]; track i) {
+            <div class="p-3.5 rounded-lg border border-slate-200 animate-pulse space-y-2.5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-slate-200"></div>
+                  <div class="h-3.5 w-32 bg-slate-200 rounded"></div>
+                </div>
+                <div class="h-3 w-16 bg-slate-200 rounded"></div>
+              </div>
+              <div class="h-3 w-44 bg-slate-100 rounded"></div>
+              <div class="flex gap-2">
+                <div class="h-5 w-20 bg-slate-100 rounded-full"></div>
+                <div class="h-5 w-16 bg-slate-100 rounded-full"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (hasQueueError()) {
+        <!-- Error State -->
+        <div class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
+          <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[24px]">cloud_off</span>
+          </div>
+          <p class="text-sm font-semibold text-slate-800">Erreur de chargement de la file</p>
+          <p class="text-xs text-slate-500 max-w-xs">Impossible de récupérer les rapports en attente auprès du serveur local.</p>
+          <button
+            (click)="loadQueue(true)"
+            class="px-3 py-1.5 rounded-lg bg-[#003426] text-white text-xs font-semibold hover:bg-[#0f4c3a] transition-colors whitespace-nowrap"
+          >
+            Réessayer
+          </button>
+        </div>
+      } @else if (queue().length === 0) {
+        <!-- Empty State -->
+        <div class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
+          <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
+            <span class="material-symbols-outlined text-[28px]">verified</span>
+          </div>
+          <h3 class="text-sm font-bold text-slate-800">File d'attente à jour</h3>
+          <p class="text-xs text-slate-500 max-w-xs">Tous les rapports de mission du district ont été validés et certifiés vers DHIS2.</p>
+          <button
+            (click)="setFilter('TOUS'); searchQuery.set(''); loadQueue(true)"
+            class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+          >
+            Réinitialiser les filtres
+          </button>
+        </div>
+      } @else {
+        <!-- Scrollable Queue Cards List -->
+        <div class="flex-1 overflow-y-auto divide-y divide-[#F3F4F6] p-2 space-y-2">
+          @for (item of queue(); track item.id) {
+            <article
+              (click)="selectReport(item.id)"
+              class="p-3.5 rounded-lg transition-all cursor-pointer relative"
+              [ngClass]="selectedReportId() === item.id 
+                ? 'bg-[#E6F4EA]/40 border-2 border-[#003426]/80 shadow-[0_2px_4px_-2px_rgba(15,76,58,0.08)]' 
+                : 'bg-white hover:bg-[#F8FAF9] border border-[#E5E7EB]'"
+            >
+              @if (selectedReportId() === item.id) {
+                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003426] rounded-l-md"></div>
+              }
+
+              <div class="flex items-start justify-between gap-2 mb-1.5 pl-1">
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ring-1 flex-shrink-0"
+                    [ngClass]="selectedReportId() === item.id 
+                      ? 'bg-[#003426]/10 text-[#003426] ring-[#003426]/20' 
+                      : 'bg-[#F3F4F6] text-[#374151] ring-slate-200'"
+                  >
+                    {{ item.agentInitiales }}
+                  </div>
+                  <div>
+                    <h3 class="text-xs font-bold text-[#121c28] leading-tight">{{ item.agentNom }}</h3>
+                    <span class="text-[11px] text-[#4B5563]">{{ item.agentRole }}</span>
+                  </div>
+                </div>
+                <span class="text-[11px] font-mono text-[#6B7280] bg-white px-1.5 py-0.5 rounded border border-[#E5E7EB] whitespace-nowrap">
+                  {{ item.numeroRapport }}
+                </span>
+              </div>
+
+              <!-- Zone & Time -->
+              <div class="flex items-center justify-between pl-1 text-[11px] text-[#4B5563] my-2">
+                <span class="flex items-center gap-1 font-medium text-[#1F2937] truncate">
+                  <span class="material-symbols-outlined text-[15px] text-[#003426]">location_on</span>
+                  {{ item.zoneCiblee }}
+                </span>
+                <span class="flex items-center gap-1 text-[#6B7280] whitespace-nowrap flex-shrink-0">
+                  <span class="material-symbols-outlined text-[13px]">schedule</span>
+                  {{ item.tempsRelatif }}
+                </span>
+              </div>
+
+              <!-- Quick Pill Telemetry -->
+              <div class="flex items-center flex-wrap gap-1.5 pl-1 pt-1 border-t border-[#E5E7EB]">
+                @if (item.masDetectes > 0) {
+                  <span class="px-2 py-0.5 rounded-full bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] text-[11px] font-semibold flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></span>
+                    {{ item.masDetectes }} MAS détectés
+                  </span>
+                }
+                @if (item.mamDetectes > 0) {
+                  <span class="px-2 py-0.5 rounded-full bg-[#FFFBEB] border border-[#FCD34D] text-[#92400E] text-[11px] font-medium flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#D97706]"></span>
+                    {{ item.mamDetectes }} MAM
+                  </span>
+                }
+                @if (item.tauxCiblePourcent > 0) {
+                  <span class="px-2 py-0.5 rounded-full bg-[#ECFDF5] border border-[#6EE7B7] text-[#065F46] text-[11px] font-medium whitespace-nowrap flex-shrink-0">
+                    {{ item.tauxCiblePourcent }}% Cible
+                  </span>
+                }
+                @if (item.masDetectes === 0 && item.mamDetectes === 0) {
+                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] whitespace-nowrap flex-shrink-0">
+                    {{ item.atpeDelivresCartons }} Cartons transférés
+                  </span>
+                }
+              </div>
+
+              <!-- Status Indicator -->
+              <div class="mt-2 pl-1 flex items-center justify-between text-[11px]">
+                <span class="text-[#059669] font-medium flex items-center gap-1 whitespace-nowrap">
+                  <span class="material-symbols-outlined text-[15px] fill">verified_user</span>
+                  GPS Conforme ({{ item.distanceFoyerMetres }}m)
+                </span>
+                <span class="text-[#6B7280] italic whitespace-nowrap">En attente Dr. Diallo</span>
+              </div>
+            </article>
+          }
+        </div>
+      }
+
+      <!-- Queue Bottom Quick Stats -->
+      <div class="p-2.5 bg-[#F9FAFB] border-t border-[#E5E7EB] flex items-center justify-between text-xs text-[#4B5563]">
+        <span>Moyenne de validation : <strong class="text-[#003426]">1h 12m</strong></span>
+        <span (click)="showToast('Historique', 'Accès aux 248 rapports archivés depuis le début du mois.')" class="text-[#006c4a] font-semibold cursor-pointer hover:underline whitespace-nowrap">
+          Voir l'historique complet
+        </span>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- RIGHT COLUMN (~62%): Selected Report Detail Workspace Card             -->
+    <!-- ===================================================================== -->
+    <section class="flex-1 flex flex-col bg-white border border-[#E5E7EB] rounded-xl shadow-[0_1px_3px_0_rgba(15,76,58,0.04)] overflow-hidden">
+      
+      @if (isLoadingDetail()) {
+        <!-- Skeleton Detail Loading -->
+        <div class="flex-1 p-6 space-y-6 animate-pulse">
+          <div class="h-8 w-2/3 bg-slate-200 rounded"></div>
+          <div class="h-20 bg-slate-100 rounded-xl"></div>
+          <div class="grid grid-cols-4 gap-3">
+            @for (k of [1,2,3,4]; track k) {
+              <div class="h-24 bg-slate-100 rounded-xl"></div>
+            }
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            @for (p of [1,2,3,4]; track p) {
+              <div class="h-32 bg-slate-100 rounded-lg"></div>
+            }
+          </div>
+        </div>
+      } @else {
+        @if (selectedReport(); as report) {
+        
+        <!-- Detailed Report Header -->
+        <div class="p-4 lg:p-6 border-b border-[#E5E7EB] bg-white">
+          <div class="flex items-start justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded bg-[#003426]/10 text-[#003426] font-mono text-xs font-bold whitespace-nowrap flex-shrink-0">
+                  {{ report.numeroRapport }}
+                </span>
+                <span class="px-2.5 py-0.5 rounded-full bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] text-xs font-bold flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></span>
+                  Priorité {{ report.prioriteClinique }} • Foyer MAS
+                </span>
+                <span class="text-xs text-[#6B7280] hidden sm:inline whitespace-nowrap">Soumission Terrain Mobile</span>
+              </div>
+              <h1 class="text-lg lg:text-xl font-bold text-[#121c28] text-balance">
+                {{ report.titreMission }}
+              </h1>
+              <p class="text-xs text-[#4B5563] flex flex-wrap items-center gap-2 pt-0.5">
+                <span>Agent soumissionnaire : <strong class="text-[#121c28]">{{ report.agentNom }}</strong></span>
+                <span>•</span>
+                <span>Reçu le <strong class="text-[#121c28]">{{ report.tempsRelatif }}</strong></span>
+                <span>•</span>
+                <span class="text-[#006c4a] font-medium">À valider par Dr. Aminata Diallo</span>
+              </p>
+            </div>
+
+            <!-- Quick print / export buttons -->
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                (click)="printReport()"
+                class="w-8 h-8 rounded-lg border border-[#D1D5DB] flex items-center justify-center text-[#4B5563] hover:bg-[#F9FAFB] transition-colors"
+                title="Imprimer fiche de transmission"
+              >
+                <span class="material-symbols-outlined text-[18px]">print</span>
+              </button>
+              <button
+                (click)="showToast('Partage Sécurisé', 'Lien de révision envoyé au Dr. Superviseur Adjoint.')"
+                class="w-8 h-8 rounded-lg border border-[#D1D5DB] flex items-center justify-center text-[#4B5563] hover:bg-[#F9FAFB] transition-colors"
+                title="Partager au superviseur adjoint"
+              >
+                <span class="material-symbols-outlined text-[18px]">share</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scrollable Content Canvas -->
+        <div class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
+          
+          <!-- MODULE 1: GPS Check-in & Verification Strip -->
+          <div class="rounded-xl border border-[#A7F3D0] bg-[#ECFDF5]/50 p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-white border border-[#6EE7B7] text-[#065F46] flex items-center justify-center shrink-0 shadow-xs">
+                <span class="material-symbols-outlined text-[24px] fill">verified</span>
+              </div>
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                  <h4 class="text-sm font-bold text-[#065F46]">Vérification Géographique GPS Conforme</h4>
+                  <span class="px-2 py-0.2 rounded-full bg-[#059669] text-white text-[10px] font-bold whitespace-nowrap flex-shrink-0">
+                    100% GÉOFENCÉ
+                  </span>
+                </div>
+                <p class="text-xs text-[#047857]">
+                  Coordonnées certifiées : <span class="font-mono font-medium">Lat {{ report.latitude }}° N, Long {{ report.longitude }}° W</span> (Rayon : {{ report.distanceFoyerMetres }}m du foyer épidémique ciblé)
+                </p>
+                <div class="text-[11px] text-[#065F46]/80 flex flex-wrap items-center gap-2 pt-0.5">
+                  <span>Check-in : <strong>{{ report.heureCheckIn }}</strong></span>
+                  <span>•</span>
+                  <span>Check-out : <strong>{{ report.heureCheckOut }}</strong></span>
+                  <span>•</span>
+                  <span>Durée effective sur le terrain : <strong>{{ report.dureeTerrain }}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini Map Preview Snippet -->
+            <div class="w-full md:w-44 h-16 rounded-lg overflow-hidden border border-[#A7F3D0] relative shrink-0 shadow-xs">
+              <div
+                class="w-full h-full bg-cover bg-center"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCRVtsbwb1l13HjAQfZEw7pwlL-zKr9aHYY6AXS3SJQNce60UTMmtKdk5GxUDBQ2XX4s_Qw12kV02N6NTbz6pMttDHz0N1ENeCrxN2Bm8niToG09o79VekGKCRJo8bm2DXA0OaO4cKyjUYFfJQ4ZIRTdHRdwI_tJYSedPk0ETKgq651UMldwH8Z-8I9FmOGo4FACxxspDrEzeL2hQsJenK50xxayHW3YoRmdsnHEZP3G7FMLKVkfuJF')"
+              ></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end p-1.5">
+                <span class="text-[10px] text-white font-mono flex items-center gap-1 font-semibold whitespace-nowrap">
+                  <span class="w-2 h-2 rounded-full bg-[#10B981] animate-ping"></span>
+                  Zone {{ report.posteSante }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODULE 2: Clinical Metrics Summary Grid (4 KPI blocks) -->
+          <div>
+            <h3 class="text-sm font-bold text-[#121c28] mb-2.5 flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[18px] text-[#003426]">analytics</span>
+              Indicateurs Sanitaires &amp; Résultats de la Mission
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <!-- Metric 1: Dépistages -->
+              <div class="p-3.5 rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_3px_0_rgba(15,76,58,0.04)]">
+                <span class="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider block">Enfants Dépistés</span>
+                <div class="flex items-baseline gap-2 mt-1">
+                  <span class="text-2xl lg:text-3xl font-bold text-[#121c28]">{{ report.enfantsDepistes }}</span>
+                  <span class="text-xs text-[#059669] font-bold bg-[#ECFDF5] px-1.5 py-0.2 rounded">+{{ report.tauxCiblePourcent }}%</span>
+                </div>
+                <span class="text-xs text-[#6B7280] block mt-1">Cible initiale : {{ report.cibleInitiale }} enfants</span>
+              </div>
+
+              <!-- Metric 2: MAS Détectés (Critical Alert) -->
+              <div class="p-3.5 rounded-xl bg-[#FEF2F2] border-2 border-[#F87171] shadow-[0_1px_3px_0_rgba(15,76,58,0.04)]">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-bold text-[#991B1B] uppercase tracking-wider block">MAS Critiques</span>
+                  <span class="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse"></span>
+                </div>
+                <div class="flex items-baseline gap-2 mt-1">
+                  <span class="text-2xl lg:text-3xl font-bold text-[#991B1B]">{{ report.masDetectes }} cas</span>
+                </div>
+                <span class="text-xs text-[#B91C1C] block mt-1 font-medium">PB &lt; 115mm ou œdèmes +</span>
+              </div>
+
+              <!-- Metric 3: MAM Détectés (Moderate Warning) -->
+              <div class="p-3.5 rounded-xl bg-[#FFFBEB] border border-[#FCD34D] shadow-[0_1px_3px_0_rgba(15,76,58,0.04)]">
+                <span class="text-[11px] font-bold text-[#92400E] uppercase tracking-wider block">MAM Modérés</span>
+                <div class="flex items-baseline gap-2 mt-1">
+                  <span class="text-2xl lg:text-3xl font-bold text-[#B45309]">{{ report.mamDetectes }} cas</span>
+                </div>
+                <span class="text-xs text-[#92400E] block mt-1">PB 115–124mm (Supplémentation)</span>
+              </div>
+
+              <!-- Metric 4: Rations ATPE délivrées -->
+              <div class="p-3.5 rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_3px_0_rgba(15,76,58,0.04)]">
+                <span class="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider block">ATPE Délivrés</span>
+                <div class="flex items-baseline gap-2 mt-1">
+                  <span class="text-2xl lg:text-3xl font-bold text-[#003426]">{{ report.atpeDelivresCartons }}</span>
+                  <span class="text-xs text-[#6B7280]">cartons</span>
+                </div>
+                <span class="text-xs text-[#059669] block mt-1 font-medium">Plumpy'Nut • Émargement 100%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODULE 3: Photo Evidence Gallery -->
+          <div>
+            <div class="flex items-center justify-between mb-2.5">
+              <h3 class="text-sm font-bold text-[#121c28] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-[#003426]">photo_camera</span>
+                Galerie d'Éléments Probants Terrain ({{ report.preuvesPhotos.length }} photos horodatées &amp; certifiées EXIF)
+              </h3>
+              <span (click)="showToast('Archive Téléchargée', 'Le fichier preuves_mission_108.zip est téléchargé.')" class="text-xs text-[#006c4a] font-medium hover:underline cursor-pointer whitespace-nowrap">
+                Télécharger le dossier complet (.zip)
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              @for (photo of report.preuvesPhotos; track photo.titre) {
+                <div class="group relative rounded-lg border border-[#E5E7EB] bg-white overflow-hidden shadow-xs hover:shadow-md transition-all">
+                  <div class="h-32 w-full overflow-hidden bg-slate-100 relative">
+                    <img
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 cursor-pointer"
+                      [src]="photo.imageUrl"
+                      [alt]="photo.titre"
+                      (click)="openLightbox(photo)"
+                    />
+                    <span
+                      class="absolute top-2 left-2 px-1.5 py-0.5 rounded text-white text-[10px] font-bold whitespace-nowrap"
+                      [ngClass]="photo.tag.includes('MAS') || photo.tag.includes('Œdème') ? 'bg-[#DC2626]' : 'bg-[#003426]'"
+                    >
+                      {{ photo.tag }}
+                    </span>
+                    <button
+                      (click)="openLightbox(photo)"
+                      class="absolute top-2 right-2 w-6 h-6 rounded bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <span class="material-symbols-outlined text-[14px]">fullscreen</span>
+                    </button>
+                  </div>
+                  <div class="p-2 space-y-0.5">
+                    <p class="text-xs font-semibold text-[#121c28] truncate">{{ photo.titre }}</p>
+                    <div class="flex items-center justify-between text-[10px] text-[#6B7280]">
+                      <span>{{ photo.heureGmt }}</span>
+                      <span class="font-mono text-[#059669] font-medium">{{ photo.statutExif }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- MODULE 4: Observations Terrain & Notes du Relais -->
+          <div class="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] p-4">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="text-sm font-bold text-[#121c28] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px] text-[#4B5563]">format_quote</span>
+                Observations Terrain &amp; Notes de la Bajenu Gox
+              </h4>
+              <span class="text-xs text-[#6B7280]">Saisie vocale transcrite</span>
+            </div>
+            <blockquote class="text-xs font-medium text-[#374151] italic bg-white p-3 rounded-lg border-l-4 border-[#003426] leading-relaxed shadow-2xs text-pretty">
+              "{{ report.observationsTerrain }}"
+            </blockquote>
+          </div>
+
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- BOTTOM STICKY ACTION BAR                                              -->
+        <!-- ===================================================================== -->
+        <footer class="p-4 border-t border-[#E5E7EB] bg-white flex flex-col md:flex-row items-center justify-between gap-3 shrink-0 shadow-[0_-2px_6px_rgba(0,0,0,0.03)]">
+          <!-- Left: Quick comment input or review notes -->
+          <div class="w-full md:w-1/2 relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#9CA3AF]">comment</span>
+            <input
+              [ngModel]="commentInput()"
+              (ngModelChange)="commentInput.set($event)"
+              class="w-full h-10 pl-9 pr-3 text-xs bg-[#F9FAFB] border border-[#D1D5DB] rounded-lg focus:bg-white focus:outline-none focus:border-[#003426] focus:ring-2 focus:ring-[#003426]/15 transition-all placeholder:text-[#9CA3AF]"
+              placeholder="Demander un complément ou motif de révision..."
+              type="text"
+            />
+          </div>
+
+          <!-- Right: Two Primary Decision Buttons -->
+          <div class="w-full md:w-auto flex items-center justify-end gap-2 shrink-0">
+            <!-- Secondary Action: Request Revision -->
+            <button
+              (click)="demanderComplement()"
+              [disabled]="isActionInProgress()"
+              class="h-10 px-4 rounded-lg border border-[#D1D5DB] bg-white text-[#374151] hover:bg-[#F9FAFB] hover:border-[#9CA3AF] text-xs font-semibold flex items-center gap-1.5 transition-colors active:scale-95 whitespace-nowrap disabled:opacity-50"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[18px] text-[#6B7280]">assignment_return</span>
+              <span>Demander un Complément</span>
+            </button>
+
+            <!-- Primary Action: Validate & Transmit to DHIS2 -->
+            <button
+              (click)="validerSelection()"
+              [disabled]="isActionInProgress()"
+              class="h-10 px-5 rounded-lg bg-[#003426] text-white hover:bg-[#0f4c3a] text-xs font-bold flex items-center gap-2 shadow-sm active:scale-95 transition-all whitespace-nowrap disabled:opacity-50"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[20px] fill">verified</span>
+              <span>Valider et Archiver vers DHIS2</span>
+            </button>
+          </div>
+        </footer>
+
+      } @else {
+        <!-- No report selected -->
+        <div class="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400 space-y-2">
+          <span class="material-symbols-outlined text-4xl">description</span>
+          <p class="text-sm font-medium">Sélectionnez un rapport dans la file d'attente pour démarrer la revue médicale.</p>
+        </div>
+      }
+    }
+
+    </section>
+
+  </div>
+
+  <!-- LIGHTBOX MODAL FOR EXIF PHOTOS -->
+  @if (lightboxPhoto(); as photo) {
+    <div
+      (click)="closeLightbox()"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+    >
+      <div
+        (click)="$event.stopPropagation()"
+        class="bg-white rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-700 relative"
+      >
+        <div class="p-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-800">{{ photo.titre }}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#003426] text-white">{{ photo.tag }}</span>
+          </div>
+          <button (click)="closeLightbox()" class="text-slate-400 hover:text-slate-700">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+        <div class="p-2 bg-slate-950 flex items-center justify-center max-h-[70vh] overflow-hidden">
+          <img [src]="photo.imageUrl" [alt]="photo.titre" class="max-h-[68vh] object-contain rounded" />
+        </div>
+        <div class="p-3 bg-white flex items-center justify-between text-xs text-slate-600">
+          <span class="flex items-center gap-1 font-mono">
+            <span class="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
+            {{ photo.statutExif }} • Horodatage GPS certifié {{ photo.heureGmt }}
+          </span>
+          <button (click)="closeLightbox()" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold">
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- NOTIFICATION TOAST -->
+  @if (toastMessage(); as toast) {
+    <div class="fixed bottom-6 right-6 bg-[#003426] text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-emerald-400/30 z-50 animate-bounce-short">
+      <span class="material-symbols-outlined text-[22px] text-[#85f8c4]">check_circle</span>
+      <div class="text-left">
+        <p class="text-xs font-bold">{{ toast.title }}</p>
+        <p class="text-[11px] text-[#82bba4] text-pretty">{{ toast.subtitle }}</p>
+      </div>
+    </div>
+  }
+
+</div>

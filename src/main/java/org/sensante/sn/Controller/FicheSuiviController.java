@@ -5,10 +5,16 @@ import org.springframework.web.bind.annotation.*;
 import org.sensante.sn.Model.FicheSuivi;
 import org.sensante.sn.Service.FicheSuiviService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/fiches-suivi")
+@Tag(name = "Fiches de Suivi Nutritionnel", description = "Gestion des fiches de suivi terrain, visites à domicile et évolution clinique")
+@PreAuthorize("hasAnyRole('AGENT_SANTE', 'MEDECIN', 'SUPERVISEUR', 'ADMINISTRATEUR')")
 public class FicheSuiviController {
 
     private final FicheSuiviService ficheSuiviService;

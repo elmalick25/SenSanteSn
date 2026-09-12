@@ -1,0 +1,20 @@
+# Profil de test hermétique : base H2 en mémoire, aucune dépendance Postgres locale.
+spring:
+  datasource:
+    url: jdbc:h2:mem:sensante_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: false
+sensante:
+  storage:
+    local-dir: ./target/test-uploads
+    max-file-size-mb: 10

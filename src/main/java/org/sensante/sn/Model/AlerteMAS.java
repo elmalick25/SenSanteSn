@@ -6,6 +6,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "alerte_mas")
 @Getter
 @Setter
 public class AlerteMAS {

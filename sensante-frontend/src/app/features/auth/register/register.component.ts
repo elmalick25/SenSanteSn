@@ -183,7 +183,7 @@ export class RegisterComponent {
     this.authService.register(payload).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/login']);
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);

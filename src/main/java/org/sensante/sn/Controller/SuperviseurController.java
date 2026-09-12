@@ -5,10 +5,16 @@ import org.springframework.web.bind.annotation.*;
 import org.sensante.sn.Model.Superviseur;
 import org.sensante.sn.Service.SuperviseurService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/superviseurs")
+@Tag(name = "Gestion des Superviseurs de District", description = "Administration des superviseurs sanitaires départementaux et régionaux")
+@PreAuthorize("hasRole('ADMINISTRATEUR')")
 public class SuperviseurController {
 
     private final SuperviseurService superviseurService;

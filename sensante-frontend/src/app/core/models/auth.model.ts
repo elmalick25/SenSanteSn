@@ -21,6 +21,8 @@ export interface AuthResponse {
   nom: string;
   prenom: string;
   email: string;
+  telephone?: string;
+  avatarUrl?: string;
   role: Role;
 }
 
@@ -29,6 +31,8 @@ export interface UserSession {
   nom: string;
   prenom: string;
   email: string;
+  telephone?: string;
+  avatarUrl?: string;
   role: Role;
   token: string;
 }

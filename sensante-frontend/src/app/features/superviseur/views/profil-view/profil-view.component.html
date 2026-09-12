@@ -1,0 +1,537 @@
+<div class="profil-container">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       NOTIFICATION TOAST
+  ═══════════════════════════════════════════════════════════════ -->
+  @if (toastMessage()) {
+    <aside class="toast-notification" [class.toast-error]="toastType() === 'error'" role="alert" aria-live="polite">
+      <div class="toast-content">
+        <span class="material-symbols-outlined text-xl" [attr.aria-hidden]="true">
+          {{ toastType() === 'error' ? 'error' : 'check_circle' }}
+        </span>
+        <span class="toast-text font-medium">{{ toastMessage() }}</span>
+      </div>
+      <button type="button" class="toast-close" (click)="dismissToast()" aria-label="Fermer la notification">
+        <span class="material-symbols-outlined text-sm" [attr.aria-hidden]="true">close</span>
+      </button>
+    </aside>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PAGE HEADER & STRATEGIC BADGE
+  ═══════════════════════════════════════════════════════════════ -->
+  <header class="page-header flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-headline-lg font-headline-lg text-[#121c28] tracking-tight text-balance">
+        Mon Profil &amp; Identité Stratégique
+      </h1>
+      <p class="text-body-md font-body-md text-neutral-600 mt-1 max-w-3xl text-pretty">
+        Gestion des informations administratives, accréditations MSAS et périmètre de supervision du Médecin Chef de District.
+      </p>
+    </div>
+
+    <!-- Quick MSAS Accreditation Badge -->
+    <div class="flex items-center gap-2 text-label-md font-label-md text-neutral-700 bg-white border border-[#E5E7EB] rounded-xl px-3.5 py-2 shadow-sm whitespace-nowrap self-start md:self-auto">
+      <span class="material-symbols-outlined text-[#006c4a] text-lg" [attr.aria-hidden]="true">verified_user</span>
+      <span class="font-semibold">Accréditation MSAS active</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TAB SWITCHER (NAV RAIL)
+  ═══════════════════════════════════════════════════════════════ -->
+  <nav class="flex items-center border-b border-[#E5E7EB] space-x-2 mt-4" aria-label="Sections du profil">
+    <button
+      type="button"
+      class="tab-btn flex items-center gap-2 px-4 py-2.5 border-b-2 font-semibold text-label-lg transition-colors whitespace-nowrap"
+      [class.tab-active]="activeTab() === 'personal'"
+      [class.tab-inactive]="activeTab() !== 'personal'"
+      (click)="selectTab('personal')">
+      <span class="material-symbols-outlined text-base" [attr.aria-hidden]="true">person</span>
+      <span>Informations Personnelles</span>
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn flex items-center gap-2 px-4 py-2.5 border-b-2 font-medium text-label-lg transition-colors whitespace-nowrap"
+      [class.tab-active]="activeTab() === 'preferences'"
+      [class.tab-inactive]="activeTab() !== 'preferences'"
+      (click)="selectTab('preferences')">
+      <span class="material-symbols-outlined text-base" [attr.aria-hidden]="true">tune</span>
+      <span>Préférences</span>
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn flex items-center gap-2 px-4 py-2.5 border-b-2 font-medium text-label-lg transition-colors whitespace-nowrap"
+      [class.tab-active]="activeTab() === 'security'"
+      [class.tab-inactive]="activeTab() !== 'security'"
+      (click)="selectTab('security')">
+      <span class="material-symbols-outlined text-base" [attr.aria-hidden]="true">security</span>
+      <span>Sécurité &amp; Accréditations</span>
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ÉTAT DE CHARGEMENT (SKELETON)
+  ═══════════════════════════════════════════════════════════════ -->
+  @if (loading()) {
+    <section class="skeleton-card bg-white border border-[#E5E7EB] rounded-2xl p-8 space-y-6 mt-6 animate-pulse" aria-busy="true">
+      <div class="flex items-center gap-6">
+        <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-slate-200"></div>
+        <div class="space-y-3 flex-1">
+          <div class="h-6 bg-slate-200 rounded w-1/3"></div>
+          <div class="h-4 bg-slate-200 rounded w-1/2"></div>
+          <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
+        <div class="space-y-4">
+          <div class="h-10 bg-slate-100 rounded-xl"></div>
+          <div class="h-10 bg-slate-100 rounded-xl"></div>
+          <div class="h-10 bg-slate-100 rounded-xl"></div>
+        </div>
+        <div class="space-y-4">
+          <div class="h-10 bg-slate-100 rounded-xl"></div>
+          <div class="h-10 bg-slate-100 rounded-xl"></div>
+          <div class="h-24 bg-slate-100 rounded-xl"></div>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ÉTAT D'ERREUR DÉFENSIF
+  ═══════════════════════════════════════════════════════════════ -->
+  @if (!loading() && error()) {
+    <section class="error-banner bg-rose-50 border border-rose-200 rounded-2xl p-6 mt-6 flex items-start gap-4" role="alert">
+      <span class="material-symbols-outlined text-rose-600 text-2xl" [attr.aria-hidden]="true">error</span>
+      <div class="flex-1">
+        <h2 class="text-title-md font-bold text-rose-900">Erreur de chargement</h2>
+        <p class="text-body-md text-rose-700 mt-1">{{ error() }}</p>
+        <button
+          type="button"
+          class="mt-3 px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-label-md font-medium transition-colors whitespace-nowrap shadow-sm"
+          (click)="chargerProfil()">
+          Réessayer
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CARTE PRINCIPALE DE PROFIL (LEVEL 1 ELEVATION, ROUNDED-2XL)
+  ═══════════════════════════════════════════════════════════════ -->
+  @if (!loading() && !error() && profile()) {
+    <article class="bg-white border border-[#E5E7EB] rounded-2xl custom-card-shadow overflow-hidden mt-6">
+
+      <!-- BANDEAU D'EN-TÊTE DE PROFIL (OVERVIEW HERO BANNER) -->
+      <div class="p-6 md:p-8 bg-[#F8FAF9]/90 border-b border-[#F3F4F6] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div class="flex items-center gap-6">
+
+          <!-- Avatar officiel avec bouton d'édition -->
+          <div class="relative flex-shrink-0">
+            <img
+              [src]="profile()!.avatarUrl"
+              [alt]="'Portrait photographique de ' + profile()!.fullName"
+              class="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white shadow-sm ring-1 ring-[#E5E7EB]"
+            />
+            <button
+              type="button"
+              class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#0f4c3a] text-white flex items-center justify-center shadow-md hover:bg-[#003426] transition-transform duration-150 active:scale-95 border-2 border-white"
+              title="Modifier la photo de profil">
+              <span class="material-symbols-outlined text-base" [attr.aria-hidden]="true">edit</span>
+            </button>
+          </div>
+
+          <!-- Badges d'Identité & Titre -->
+          <div class="flex flex-col gap-1.5">
+            <div class="flex flex-wrap items-center gap-2.5">
+              <h2 class="text-headline-md font-headline-md font-bold text-neutral-900">
+                {{ profile()!.fullName }}
+              </h2>
+              <span class="inline-flex items-center gap-1.5 bg-[#ECFDF5] text-[#065F46] border border-[#6EE7B7] text-label-sm font-label-sm px-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#059669]"></span>
+                {{ profile()!.roleLabel }}
+              </span>
+            </div>
+
+            <p class="text-body-md font-body-md text-neutral-600 flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[#006c4a] text-base" [attr.aria-hidden]="true">verified</span>
+              <span>Accréditation MSAS active • {{ profile()!.districtName }}</span>
+            </p>
+
+            <div class="flex flex-wrap items-center gap-3 text-label-md font-label-md text-neutral-500 mt-0.5">
+              <span class="flex items-center gap-1 whitespace-nowrap">
+                <span class="material-symbols-outlined text-sm text-neutral-400" [attr.aria-hidden]="true">mail</span>
+                {{ profile()!.email }}
+              </span>
+              <span class="text-neutral-300">•</span>
+              <span class="flex items-center gap-1 whitespace-nowrap">
+                <span class="material-symbols-outlined text-sm text-neutral-400" [attr.aria-hidden]="true">medical_services</span>
+                Matricule : {{ profile()!.matricule }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stat Badge (Supervision Directe) -->
+        <div class="hidden lg:flex flex-col items-end text-right bg-white p-3.5 rounded-xl border border-[#E5E7EB] shadow-xs">
+          <span class="text-label-sm font-label-sm text-neutral-500 uppercase tracking-wider whitespace-nowrap">Supervision Directe</span>
+          <span class="text-title-lg font-title-lg font-bold text-[#003426] mt-0.5 whitespace-nowrap">
+            {{ profile()!.totalStructuresSupervised }} Formations Sanitaires
+          </span>
+          <span class="text-label-sm font-label-sm text-[#065F46] flex items-center gap-1 mt-0.5 font-medium whitespace-nowrap">
+            <span class="material-symbols-outlined text-xs" [attr.aria-hidden]="true">check_circle</span>
+            Taux de conformité {{ profile()!.conformityRate }}%
+          </span>
+        </div>
+      </div>
+
+      <!-- CORPS DU FORMULAIRE : ONGLET 1 - INFORMATIONS PERSONNELLES -->
+      @if (activeTab() === 'personal') {
+        <form class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8" (ngSubmit)="enregistrerModifications()">
+
+          <!-- COLONNE GAUCHE : INFORMATIONS PERSONNELLES -->
+          <div class="flex flex-col space-y-6">
+            <div class="pb-2 border-b border-[#F3F4F6] flex items-center justify-between">
+              <h3 class="text-title-lg font-title-lg text-neutral-900 font-semibold flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#003426] text-lg" [attr.aria-hidden]="true">badge</span>
+                <span>Informations Personnelles</span>
+              </h3>
+              <span class="text-label-sm font-label-sm text-neutral-400 whitespace-nowrap">Modifiable</span>
+            </div>
+
+            <!-- Nom complet -->
+            <div class="flex flex-col space-y-1.5">
+              <label class="text-label-md font-label-md font-semibold text-neutral-700" for="fullName">
+                Nom complet <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <input
+                  class="w-full bg-white border border-[#D1D5DB] rounded-xl px-3.5 py-2.5 text-body-md font-body-md text-neutral-900 focus:outline-none focus:border-[#003426] focus:ring-2 focus:ring-[#003426]/20 transition-all"
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  [(ngModel)]="fullName"
+                  required
+                />
+                <span class="material-symbols-outlined text-neutral-400 absolute right-3.5 top-3 text-lg" [attr.aria-hidden]="true">person_outline</span>
+              </div>
+            </div>
+
+            <!-- Numéro de téléphone -->
+            <div class="flex flex-col space-y-1.5">
+              <label class="text-label-md font-label-md font-semibold text-neutral-700" for="phone">
+                Numéro de téléphone <span class="text-red-500">*</span>
+              </label>
+              <div class="flex rounded-xl shadow-xs">
+                <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-[#D1D5DB] bg-[#F9FAFB] text-neutral-600 text-label-md font-label-md gap-1.5 whitespace-nowrap">
+                  <span class="text-base" aria-hidden="true">🇸🇳</span>
+                  <span>+221</span>
+                </span>
+                <input
+                  class="w-full bg-white border border-[#D1D5DB] rounded-r-xl px-3.5 py-2.5 text-body-md font-body-md text-neutral-900 focus:outline-none focus:border-[#003426] focus:ring-2 focus:ring-[#003426]/20 transition-all"
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  [(ngModel)]="phone"
+                  required
+                />
+              </div>
+              <span class="text-label-sm font-label-sm text-neutral-400 text-pretty">
+                Utilisé pour les alertes d'urgence épidémiologique par SMS.
+              </span>
+            </div>
+
+            <!-- Date de naissance -->
+            <div class="flex flex-col space-y-1.5">
+              <label class="text-label-md font-label-md font-semibold text-neutral-700" for="birthdate">
+                Date de naissance
+              </label>
+              <div class="relative">
+                <input
+                  class="w-full bg-white border border-[#D1D5DB] rounded-xl px-3.5 py-2.5 text-body-md font-body-md text-neutral-900 focus:outline-none focus:border-[#003426] focus:ring-2 focus:ring-[#003426]/20 transition-all"
+                  id="birthdate"
+                  name="birthdate"
+                  type="text"
+                  [(ngModel)]="birthdate"
+                />
+                <span class="material-symbols-outlined text-neutral-400 absolute right-3.5 top-3 text-lg" [attr.aria-hidden]="true">calendar_today</span>
+              </div>
+            </div>
+
+            <!-- Adresse / Quartier de résidence -->
+            <div class="flex flex-col space-y-1.5">
+              <label class="text-label-md font-label-md font-semibold text-neutral-700" for="address">
+                Adresse / Quartier de résidence
+              </label>
+              <div class="relative">
+                <input
+                  class="w-full bg-white border border-[#D1D5DB] rounded-xl px-3.5 py-2.5 text-body-md font-body-md text-neutral-900 focus:outline-none focus:border-[#003426] focus:ring-2 focus:ring-[#003426]/20 transition-all"
+                  id="address"
+                  name="address"
+                  type="text"
+                  [(ngModel)]="address"
+                />
+                <span class="material-symbols-outlined text-neutral-400 absolute right-3.5 top-3 text-lg" [attr.aria-hidden]="true">home_pin</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLONNE DROITE : IDENTITÉ ADMINISTRATIVE & SUPERVISION -->
+          <div class="flex flex-col space-y-6">
+            <div class="pb-2 border-b border-[#F3F4F6] flex items-center justify-between">
+              <h3 class="text-title-lg font-title-lg text-neutral-900 font-semibold flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#003426] text-lg" [attr.aria-hidden]="true">shield_lock</span>
+                <span>Identité Administrative &amp; Supervision</span>
+              </h3>
+              <span class="text-label-sm font-label-sm text-neutral-500 font-medium whitespace-nowrap">Contrôle Réseau MSAS</span>
+            </div>
+
+            <!-- District Sanitaire rattaché (Read-only) -->
+            <div class="flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-label-md font-label-md font-semibold text-neutral-700" for="district">
+                  District Sanitaire rattaché
+                </label>
+                <span class="text-label-sm font-label-sm text-neutral-400 flex items-center gap-1 font-normal whitespace-nowrap">
+                  <span class="material-symbols-outlined text-xs" [attr.aria-hidden]="true">lock</span>
+                  Verrouillé
+                </span>
+              </div>
+              <div class="relative">
+                <input
+                  class="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3.5 py-2.5 text-body-md font-body-md text-neutral-600 cursor-not-allowed"
+                  id="district"
+                  name="district"
+                  type="text"
+                  [value]="profile()!.districtName"
+                  disabled
+                />
+                <span class="material-symbols-outlined text-neutral-400 absolute right-3.5 top-3 text-lg" [attr.aria-hidden]="true">domain</span>
+              </div>
+            </div>
+
+            <!-- Matricule / ID Professionnel MSAS -->
+            <div class="flex flex-col space-y-1.5">
+              <label class="text-label-md font-label-md font-semibold text-neutral-700" for="matricule">
+                Matricule / ID Professionnel MSAS
+              </label>
+              <div class="relative flex items-center">
+                <input
+                  class="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl pl-3.5 pr-24 py-2.5 text-body-md font-body-md text-neutral-800 font-mono"
+                  id="matricule"
+                  name="matricule"
+                  [value]="profile()!.matricule"
+                  readonly
+                  type="text"
+                />
+                <div class="absolute right-2.5 top-2">
+                  <span class="inline-flex items-center gap-1 bg-[#ECFDF5] text-[#065F46] border border-[#6EE7B7] text-label-sm font-label-sm px-2 py-0.5 rounded-md font-semibold whitespace-nowrap">
+                    <span class="material-symbols-outlined text-xs" [attr.aria-hidden]="true">verified</span>
+                    Certifié
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Structures supervisées (Périmètre officiel) -->
+            <div class="flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-label-md font-label-md font-semibold text-neutral-700">
+                  Structures supervisées (Périmètre officiel)
+                </label>
+                <span class="text-label-sm font-label-sm text-neutral-500 font-medium whitespace-nowrap">
+                  {{ profile()!.structures.length }} structures
+                </span>
+              </div>
+
+              <div class="p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl flex flex-wrap gap-1.5 min-h-[96px] content-start">
+                @for (struct of profile()!.structures; track trackByStructureCode($index, struct)) {
+                  @if (struct.isHub) {
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-label-sm font-label-sm font-medium bg-[#0f4c3a]/10 text-[#0f4c3a] border border-[#0f4c3a]/20 whitespace-nowrap">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#0f4c3a] mr-1.5"></span>
+                      {{ struct.name }}
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-label-sm font-label-sm font-medium bg-white text-neutral-700 border border-[#D1D5DB] whitespace-nowrap">
+                      {{ struct.name }}
+                    </span>
+                  }
+                }
+              </div>
+            </div>
+
+            <!-- Langue de travail (Segmented Toggle) -->
+            <div class="flex flex-col space-y-1.5">
+              <label class="text-label-md font-label-md font-semibold text-neutral-700">
+                Langue de travail de la console
+              </label>
+              <div class="inline-flex p-1 bg-[#EEF2F6] rounded-xl border border-[#E5E7EB] w-full max-w-xs" role="group" aria-label="Sélection de la langue">
+                <button
+                  type="button"
+                  class="flex-1 py-1.5 px-3 rounded-lg text-label-md font-label-md font-semibold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+                  [class.bg-[#003426]]="preferredLanguage === 'fr'"
+                  [class.text-white]="preferredLanguage === 'fr'"
+                  [class.shadow-xs]="preferredLanguage === 'fr'"
+                  [class.text-neutral-600]="preferredLanguage !== 'fr'"
+                  (click)="setLanguage('fr')">
+                  @if (preferredLanguage === 'fr') {
+                    <span class="material-symbols-outlined text-sm" [attr.aria-hidden]="true">check</span>
+                  }
+                  <span>Français</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="flex-1 py-1.5 px-3 rounded-lg text-label-md font-label-md font-medium transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+                  [class.bg-[#003426]]="preferredLanguage === 'wo'"
+                  [class.text-white]="preferredLanguage === 'wo'"
+                  [class.shadow-xs]="preferredLanguage === 'wo'"
+                  [class.text-neutral-600]="preferredLanguage !== 'wo'"
+                  (click)="setLanguage('wo')">
+                  @if (preferredLanguage === 'wo') {
+                    <span class="material-symbols-outlined text-sm" [attr.aria-hidden]="true">check</span>
+                  }
+                  <span>Wolof</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </form>
+      }
+
+      <!-- CORPS DE CARTE : ONGLET 2 - PRÉFÉRENCES -->
+      @if (activeTab() === 'preferences') {
+        <div class="p-6 md:p-8 space-y-6">
+          <div class="pb-2 border-b border-[#F3F4F6]">
+            <h3 class="text-title-lg font-title-lg text-neutral-900 font-semibold flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#003426] text-lg" [attr.aria-hidden]="true">tune</span>
+              <span>Directives &amp; Alertes Télémétriques</span>
+            </h3>
+            <p class="text-body-sm text-neutral-500 mt-1">Paramètres des canaux de diffusion d'urgence et d'interopérabilité DHIS2.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Toggle 1: Alertes SMS MAS -->
+            <div class="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-between gap-4">
+              <div>
+                <h4 class="text-label-lg font-semibold text-neutral-800">Alertes SMS MAS Critiques</h4>
+                <p class="text-body-sm text-neutral-500 mt-0.5">Notification instantanée lors de détection de dénutrition aiguë sévère avec complications.</p>
+              </div>
+              <input type="checkbox" [(ngModel)]="smsAlertsMas" class="toggle-checkbox w-5 h-5 accent-[#003426] rounded cursor-pointer" />
+            </div>
+
+            <!-- Toggle 2: Digest Hebdo Email -->
+            <div class="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-between gap-4">
+              <div>
+                <h4 class="text-label-lg font-semibold text-neutral-800">Rapport Hebdomadaire Consolidé</h4>
+                <p class="text-body-sm text-neutral-500 mt-0.5">Synthèse épidémiologique par email chaque lundi à 07h00 GMT.</p>
+              </div>
+              <input type="checkbox" [(ngModel)]="emailDigestHebdo" class="toggle-checkbox w-5 h-5 accent-[#003426] rounded cursor-pointer" />
+            </div>
+
+            <!-- Toggle 3: Auto-sync DHIS2 -->
+            <div class="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-between gap-4">
+              <div>
+                <h4 class="text-label-lg font-semibold text-neutral-800">Synchronisation Auto DHIS2</h4>
+                <p class="text-body-sm text-neutral-500 mt-0.5">Télétransmission planifiée automatique en fin de cycle mensuel.</p>
+              </div>
+              <input type="checkbox" [(ngModel)]="autoSyncDhis2" class="toggle-checkbox w-5 h-5 accent-[#003426] rounded cursor-pointer" />
+            </div>
+
+            <!-- Toggle 4: Alerte Stock ATPE -->
+            <div class="p-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-between gap-4">
+              <div>
+                <h4 class="text-label-lg font-semibold text-neutral-800">Alerte Rupture Stock ATPE</h4>
+                <p class="text-body-sm text-neutral-500 mt-0.5">Notification préventive dès qu'une structure passe sous 3 jours d'autonomie.</p>
+              </div>
+              <input type="checkbox" [(ngModel)]="notificationStockRupture" class="toggle-checkbox w-5 h-5 accent-[#003426] rounded cursor-pointer" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- CORPS DE CARTE : ONGLET 3 - SÉCURITÉ & ACCRÉDITATIONS -->
+      @if (activeTab() === 'security') {
+        <div class="p-6 md:p-8 space-y-6">
+          <div class="pb-2 border-b border-[#F3F4F6]">
+            <h3 class="text-title-lg font-title-lg text-neutral-900 font-semibold flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#003426] text-lg" [attr.aria-hidden]="true">security</span>
+              <span>Authentification &amp; Signature Numérique MSAS</span>
+            </h3>
+            <p class="text-body-sm text-neutral-500 mt-1">Conformité aux directives nationales de cyber-sécurité médicale.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Certificat Numérique -->
+            <div class="p-4 rounded-xl border border-[#E5E7EB] bg-white space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="text-label-lg font-semibold text-neutral-800">Certificat Professionnel MSAS</h4>
+                <span class="badge badge-emerald whitespace-nowrap">Valide jusqu'en Déc 2026</span>
+              </div>
+              <p class="text-body-sm text-neutral-500">Empreinte cryptographique : <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-xs">{{ certificatSha256 }}</code></p>
+            </div>
+
+            <!-- Double Authentification TOTP -->
+            <div class="p-4 rounded-xl border border-[#E5E7EB] bg-white space-y-2">
+              <div class="flex items-center justify-between">
+                <h4 class="text-label-lg font-semibold text-neutral-800">Double Authentification (TOTP)</h4>
+                <span class="badge badge-emerald whitespace-nowrap">Activé</span>
+              </div>
+              <p class="text-body-sm text-neutral-500">Application d'authentification liée pour la signature des bordereaux de transmission.</p>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- PIED DE CARTE & ACTIONS (CARD FOOTER) -->
+      <footer class="px-6 py-4 md:px-8 bg-[#F8FAF9] border-t border-[#F3F4F6] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <!-- Horodatage de synchronisation -->
+        <div class="flex items-center gap-2 text-label-sm font-label-sm text-neutral-500">
+          <span class="material-symbols-outlined text-base text-[#006c4a]" [attr.aria-hidden]="true">cloud_upload</span>
+          <span>Dernière synchronisation de l'identité : <strong>{{ profile()!.lastSyncDate }}</strong></span>
+        </div>
+
+        <!-- Boutons d'Action -->
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <button
+            type="button"
+            class="btn-cancel px-4 py-2 bg-white border border-[#D1D5DB] hover:bg-neutral-50 text-neutral-700 rounded-xl text-label-lg font-label-lg font-medium transition-colors shadow-xs active:scale-[0.98] whitespace-nowrap"
+            (click)="annulerModifications()">
+            Annuler
+          </button>
+
+          <button
+            type="button"
+            class="btn-save flex items-center gap-2 px-5 py-2 bg-[#0f4c3a] hover:bg-[#003426] text-white rounded-xl text-label-lg font-label-lg font-semibold shadow-sm transition-all duration-150 active:scale-[0.98] whitespace-nowrap"
+            [disabled]="saving()"
+            (click)="enregistrerModifications()">
+            @if (saving()) {
+              <span class="material-symbols-outlined text-base animate-spin" [attr.aria-hidden]="true">sync</span>
+              <span>Enregistrement...</span>
+            } @else {
+              <span class="material-symbols-outlined text-base text-[#82f5c1]" [attr.aria-hidden]="true">save</span>
+              <span>Enregistrer les modifications</span>
+            }
+          </button>
+        </div>
+      </footer>
+
+    </article>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       DIRECTIVE NATIONALE MSAS (PUBLIC HEALTH CALLOUT)
+  ═══════════════════════════════════════════════════════════════ -->
+  <aside class="flex items-start gap-3 p-4 rounded-xl bg-[#EEF4FF] border border-[#DFE9FA] text-[#121c28] mt-6" role="note">
+    <span class="material-symbols-outlined text-[#006c4a] text-xl mt-0.5" [attr.aria-hidden]="true">info</span>
+    <div class="text-body-sm font-body-sm text-pretty">
+      <span class="font-semibold text-neutral-900">Protocole MSAS d'intégrité des données :</span>
+      Toute modification apportée aux coordonnées et périmètres de supervision est journalisée et transmise en temps réel au serveur central du Ministère de la Santé et de l'Action Sociale via l'interface interopérable DHIS2.
+    </div>
+  </aside>
+
+</div>
